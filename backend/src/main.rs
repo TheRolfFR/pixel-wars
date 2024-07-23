@@ -1,13 +1,15 @@
 use std::sync::Mutex;
 
-use backend::{model::{self, Canvas}, routes::routes};
+use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 
 use redis;
 use actix_web::{web, App, HttpServer, middleware};
 
 const REDIS_CONNECTION_STRING: &str = "redis://172.18.115.69/";
-const WEB_IP: &str = "127.0.0.1";
-const WEB_PORT: u16 = 5173;
+const DEBUG_WEB_IP: &str = "127.0.0.1";
+const DEBUG_WEB_PORT: u16 = 8080;
+const PROD_WEB_IP: &str = "0.0.0.0";
+const PROD_WEB_PORT: u16 = 80;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -17,11 +19,6 @@ async fn main() -> std::io::Result<()> {
     // TODO: extract args better
     let mut args = std::env::args();
     let config_path = args.nth(1).unwrap_or("..\\config.json".into());
-
-
-    // http server config
-    let (ip, port) = (WEB_IP, WEB_PORT);
-    log::info!("starting HTTP server at http://{}:{}", ip, port);
 
     // real-time db config
     let redis = redis::Client::open(REDIS_CONNECTION_STRING).unwrap();
@@ -36,14 +33,28 @@ async fn main() -> std::io::Result<()> {
         })
     });
 
+
+    // http server config
+    let (ip, port) = if config.debug_mode {
+        (DEBUG_WEB_IP, DEBUG_WEB_PORT)
+    } else {
+        (PROD_WEB_IP, PROD_WEB_PORT)
+    };
+    log::info!("starting HTTP server at http://{}:{}", ip, port);
     HttpServer::new(move || {
-        App::new()
+        let mut app = App::new()
             .app_data(app_state.clone())
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
             .wrap(middleware::Logger::default()) // log things to stdout
-            .configure(routes)
+            .configure(routes);
+
+        if config.debug_mode {
+            app = app.configure(add_reverse_proxy);
+        }
+
+        app
     })
     .bind((ip, port))?
     .run()
