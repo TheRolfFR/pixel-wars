@@ -63,6 +63,14 @@ impl From<RedisError> for BackendError {
         }
     }
 }
+impl From<serde_json::Error> for BackendError {
+    fn from(val: serde_json::Error) -> Self {
+        BackendError {
+            error: "Error with serialize/deserialize from serde_json",
+            details: val.to_string()
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Canvas {
@@ -73,4 +81,20 @@ pub struct Canvas {
 #[derive(Debug)]
 pub struct BackendAppState {
     pub canvas_valid: Mutex<Canvas>
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Profile {
+    pub name: String,
+    pub email: String,
+    pub image: String
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Client {
+    pub profile: Option<Profile>,
+    pub last_timestamp: u64,
+    pub remaining_pixels: usize
 }
