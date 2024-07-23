@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
+use actix_cors::Cors;
 
 use redis;
 use actix_web::{web, App, HttpServer, middleware};
@@ -42,7 +43,14 @@ async fn main() -> std::io::Result<()> {
     };
     log::info!("starting HTTP server at http://{}:{}", ip, port);
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .supports_credentials();
+
         let mut app = App::new()
+            .wrap(cors)
             .app_data(app_state.clone())
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis.clone())) // db connection

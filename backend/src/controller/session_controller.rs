@@ -26,7 +26,7 @@ pub async fn session_get(
     let new_uuid = Uuid::new_v4().to_string();
 
     // create new cookie
-    let host = req.uri().host().unwrap();
+    let host = req.uri().host().unwrap_or("localhost");
     let hostname = host.split(':').next().unwrap();
     let cookie = CookieBuilder::new(COOKIE_NAME, new_uuid.clone())
         .same_site(SameSite::Strict)
