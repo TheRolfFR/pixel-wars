@@ -14,9 +14,9 @@ pub async fn session_get(
     redis: web::Data<redis::Client>,
     config: web::Data<model::Config>
 ) -> actix_web::Result<HttpResponse> {
-    let mut con = redis.get_multiplexed_async_connection().await.map_err(|e| BackendError::from(e))?;
-    if let Some(uuid) = req.cookie(COOKIE_NAME).map(|u| u.to_string()) {
-        let redis_res: RedisResult<String> = con.get(uuid.to_string()).await;
+    let mut con = redis.get_multiplexed_async_connection().await.map_err(BackendError::from)?;
+    if let Some(uuid) = req.cookie(COOKIE_NAME).map(|u| u.value().to_string()) {
+        let redis_res: RedisResult<String> = con.get(uuid).await;
         if redis_res.is_ok() {
             return Ok(HttpResponse::Ok().into());
         }
@@ -40,15 +40,16 @@ pub async fn session_get(
     // create client with last seen timestamp
     let start = SystemTime::now();
     let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    let in_ms = since_the_epoch.as_secs() * 1000 + since_the_epoch.subsec_nanos() as u64 / 1_000_000;
+    let in_seconds = since_the_epoch.as_secs_f64() * 1000f64;
     let client = model::Client {
         profile: None,
-        last_timestamp: in_ms,
+        last_timestamp: in_seconds,
         remaining_pixels: config.pixels_per_minute
     };
     // send client to redis
-    let client_string = serde_json::to_string(&client).map_err(|e| BackendError::from(e))?;
-    con.set(new_uuid, client_string).await.map_err(|e| BackendError::from(e))?;
+    let client_string: String = client.encode_json().map_err(BackendError::from)?;
+    log::info!("Added user UUID={} with value: {:?}", &new_uuid, &client_string);
+    con.set(new_uuid, client_string).await.map_err(BackendError::from)?;
 
     // respond with cookie
     let res = HttpResponse::Ok().cookie(cookie).finish();

@@ -21,10 +21,13 @@ async fn main() -> std::io::Result<()> {
     let mut args = std::env::args();
     let config_path = args.nth(1).unwrap_or("..\\config.json".into());
 
-    // real-time db config
-    let redis = redis::Client::open(REDIS_CONNECTION_STRING).unwrap();
     // canvas config
     let config = model::Config::from_file(config_path).unwrap();
+
+    // real-time db config
+    let redis_url = config.redis_url.clone().unwrap_or(REDIS_CONNECTION_STRING.into());
+    log::info!("Starting redis on {}", &redis_url);
+    let redis = redis::Client::open(redis_url).unwrap();
 
     // Shared mutanle application state
     let app_state = web::Data::new(model::BackendAppState {

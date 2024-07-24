@@ -12,6 +12,7 @@ use std::sync::Mutex;
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
+    pub redis_url: Option<String>,
     pub canvas_width: usize,
     pub canvas_height: usize,
     pub pixels_per_minute: usize,
@@ -57,6 +58,7 @@ impl ResponseError for BackendError {
 
 impl From<RedisError> for BackendError {
     fn from(val: RedisError) -> Self {
+        log::error!("RedisError: {:?}", val);
         BackendError {
             error: "Error retrieving canvas from redis",
             details: val.to_string()
@@ -65,6 +67,7 @@ impl From<RedisError> for BackendError {
 }
 impl From<serde_json::Error> for BackendError {
     fn from(val: serde_json::Error) -> Self {
+        log::error!("serde_json::Error: {:?}", val);
         BackendError {
             error: "Error with serialize/deserialize from serde_json",
             details: val.to_string()
@@ -83,7 +86,7 @@ pub struct BackendAppState {
     pub canvas_valid: Mutex<Canvas>
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Profile {
     pub name: String,
@@ -91,10 +94,16 @@ pub struct Profile {
     pub image: String
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Client {
     pub profile: Option<Profile>,
-    pub last_timestamp: u64,
+    pub last_timestamp: f64,
     pub remaining_pixels: usize
+}
+
+impl Client {
+    pub fn encode_json(&self) -> Result<std::string::String, serde_json::Error> {
+        serde_json::to_string(self)
+    }
 }

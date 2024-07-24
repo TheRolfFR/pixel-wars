@@ -24,8 +24,8 @@ pub async fn canvas_get(
     let mut canvas = app_state.canvas_valid.lock().unwrap();
 
     if !canvas.valid {
-        let mut con = redis.get_multiplexed_async_connection().await.map_err(|e| BackendError::from(e))?;
-        let colors: Vec<u8> = con.get("canvas").await.map_err(|e| BackendError::from(e))?;
+        let mut con = redis.get_multiplexed_async_connection().await.map_err(BackendError::from)?;
+        let colors: Vec<u8> = con.get("canvas").await.map_err(BackendError::from)?;
 
         (*canvas).colors = colors;
         (*canvas).valid = true;
