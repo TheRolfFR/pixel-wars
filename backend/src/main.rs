@@ -58,7 +58,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
-            .wrap(middleware::Logger::default()) // log things to stdout
+            .wrap(middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
         if config.debug_mode {

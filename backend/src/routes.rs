@@ -1,20 +1,9 @@
-#![allow(unused_variables)]
-use actix_web::{get, post, web, Responder, error::ErrorInternalServerError};
+use actix_web::{get, web, Responder, error::ErrorInternalServerError};
 use redis;
 use crate::controller::*;
 
 #[get("/subscribe")]
 async fn subscription_get(redis: web::Data<redis::Client>) -> actix_web::Result<impl Responder> {
-    Err::<&'static str, actix_web::Error>(ErrorInternalServerError("unimplemented"))
-}
-
-#[post("/profiles/new")]
-async fn profiles_add(redis: web::Data<redis::Client>) -> actix_web::Result<impl Responder> {
-    Err::<&'static str, actix_web::Error>(ErrorInternalServerError("unimplemented"))
-}
-
-#[get("/profiles/get")]
-async fn profiles_get(redis: web::Data<redis::Client>) -> actix_web::Result<impl Responder> {
     Err::<&'static str, actix_web::Error>(ErrorInternalServerError("unimplemented"))
 }
 
@@ -25,8 +14,8 @@ pub fn routes(cfg: &mut web::ServiceConfig) {
         .service(web::resource("/getSession").route(web::get().to(session_get)))
         .service(web::resource("/client/details").route(web::get().to(client_timeout)))
         .service(subscription_get)
-        .service(profiles_add)
-        .service(profiles_get)
+        .service(web::resource("/profiles/new").route(web::post().to(profiles_add)))
+        .service(web::resource("/profiles/get").route(web::get().to(profiles_get)))
         ;
     cfg.service(api_scope);
 }
