@@ -5,9 +5,7 @@ use redis::AsyncCommands;
 use redis::RedisResult;
 use uuid::Uuid;
 
-use crate::model::{self, BackendError};
-
-const COOKIE_NAME: &str = "sessionUUID";
+use crate::model::{self, BackendError, SESSION_COOKIE_NAME};
 
 pub async fn session_get(
     req: HttpRequest,
@@ -15,7 +13,7 @@ pub async fn session_get(
     config: web::Data<model::Config>
 ) -> actix_web::Result<HttpResponse> {
     let mut con = redis.get_multiplexed_async_connection().await.map_err(BackendError::from)?;
-    if let Some(uuid) = req.cookie(COOKIE_NAME).map(|u| u.value().to_string()) {
+    if let Some(uuid) = req.cookie(SESSION_COOKIE_NAME).map(|u| u.value().to_string()) {
         let redis_res: RedisResult<String> = con.get(uuid).await;
         if redis_res.is_ok() {
             return Ok(HttpResponse::Ok().into());
@@ -32,7 +30,7 @@ pub async fn session_get(
     let host = opt_host.or(req.uri().host()).unwrap_or("localhost");
     let hostname = host.split(':').next().unwrap();
 
-    let cookie = CookieBuilder::new(COOKIE_NAME, new_uuid.clone())
+    let cookie = CookieBuilder::new(SESSION_COOKIE_NAME, new_uuid.clone())
         .same_site(SameSite::Strict)
         .max_age(Duration::days(400)) //max-age = 400 days, maximum allowed by chrome
         .path("/")

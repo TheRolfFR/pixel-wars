@@ -8,3 +8,6 @@ pub use session_controller::*;
 
 mod profile_controller;
 pub use profile_controller::*;
+
+mod subscription_controller;
+pub use subscription_controller::*;

@@ -1,3 +1,4 @@
+use actix::prelude::Message;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use redis::RedisError;
 use serde::{Deserialize, Serialize};
@@ -107,3 +108,13 @@ impl Client {
         serde_json::to_string(self)
     }
 }
+
+#[derive(Debug, Serialize, Deserialize, Message)]
+#[rtype(result = "()")]
+pub struct PixelColorUpdateMessage {
+    color: u8,
+    pos_x: u16,
+    pos_y: u16
+}
+
+pub const SESSION_COOKIE_NAME: &str = "sessionUUID";

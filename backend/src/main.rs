@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::{collections::HashMap, sync::Mutex};
 
 use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 use actix_cors::Cors;
@@ -34,7 +34,7 @@ async fn main() -> std::io::Result<()> {
         canvas_valid: Mutex::new(Canvas {
             colors: vec![],
             valid: false
-        })
+        }),
     });
 
 
