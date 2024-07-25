@@ -1,6 +1,6 @@
 use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
-use actix_web::{cookie::{self, time::Duration, CookieBuilder, SameSite}, error, get, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{cookie::{self, time::Duration, CookieBuilder, SameSite}, error, get, http::header, web, HttpRequest, HttpResponse, Responder};
 use redis::AsyncCommands;
 use redis::RedisResult;
 use uuid::Uuid;
@@ -22,12 +22,16 @@ pub async fn session_get(
         }
     } // return if already redis entry to cookie uuid
 
+
     // create new uuid
     let new_uuid = Uuid::new_v4().to_string();
 
+
     // create new cookie
-    let host = req.uri().host().unwrap_or("localhost");
+    let opt_host = req.headers().get(header::HOST).and_then(|hv| hv.to_str().ok());
+    let host = opt_host.or(req.uri().host()).unwrap_or("localhost");
     let hostname = host.split(':').next().unwrap();
+
     let cookie = CookieBuilder::new(COOKIE_NAME, new_uuid.clone())
         .same_site(SameSite::Strict)
         .max_age(Duration::days(400)) //max-age = 400 days, maximum allowed by chrome
@@ -36,6 +40,7 @@ pub async fn session_get(
         .secure(false)
         .http_only(true)
         .finish();
+
 
     // create client with last seen timestamp
     let start = SystemTime::now();
@@ -50,6 +55,7 @@ pub async fn session_get(
     let client_string: String = client.encode_json().map_err(BackendError::from)?;
     log::info!("Added user UUID={} with value: {:?}", &new_uuid, &client_string);
     con.set(new_uuid, client_string).await.map_err(BackendError::from)?;
+
 
     // respond with cookie
     let res = HttpResponse::Ok().cookie(cookie).finish();

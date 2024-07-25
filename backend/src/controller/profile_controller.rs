@@ -21,9 +21,8 @@ pub async fn client_timeout(
     redis: web::Data<redis::Client>,
     config: web::Data<model::Config>
 ) -> actix_web::Result<impl Responder> {
-    let uuid = req.cookie(COOKIE_NAME)
-        .map(|u| u.value().to_string())
-        .ok_or(error::ErrorInternalServerError("Invalid cookie provided"))?;
+    let cookie = req.cookie(COOKIE_NAME).ok_or(error::ErrorBadRequest("No cookie provided"))?;
+    let uuid = cookie.value().to_string();
 
     let mut con  = redis.get_multiplexed_async_connection().await
         .map_err(BackendError::from)?;
