@@ -14,8 +14,8 @@ use std::sync::Mutex;
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub redis_url: Option<String>,
-    pub canvas_width: usize,
-    pub canvas_height: usize,
+    pub canvas_width: u16,
+    pub canvas_height: u16,
     pub pixels_per_minute: usize,
     pub debug_mode: bool,
     pub host: String
@@ -112,9 +112,9 @@ impl Client {
 #[derive(Debug, Serialize, Deserialize, Message)]
 #[rtype(result = "()")]
 pub struct PixelColorUpdateMessage {
-    color: u8,
-    pos_x: u16,
-    pos_y: u16
+    pub pos_x: u16,
+    pub pos_y: u16,
+    pub color: u8
 }
 
 pub const SESSION_COOKIE_NAME: &str = "sessionUUID";

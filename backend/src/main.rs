@@ -4,7 +4,7 @@ use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 use actix_cors::Cors;
 
 use redis;
-use actix_web::{web, App, HttpServer, middleware};
+use actix_web::{web, App, HttpServer};
 
 const REDIS_CONNECTION_STRING: &str = "redis://172.18.115.69/";
 const DEBUG_WEB_IP: &str = "127.0.0.1";
@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
     // Shared mutanle application state
     let app_state = web::Data::new(model::BackendAppState {
         canvas_valid: Mutex::new(Canvas {
-            colors: vec![0; config.canvas_width*config.canvas_height/2],
+            colors: vec![0; (config.canvas_width as usize) * (config.canvas_height as usize) / 2],
             valid: false
         }),
     });
@@ -61,7 +61,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
-            // .wrap(middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
+            // .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
         if config.debug_mode {

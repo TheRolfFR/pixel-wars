@@ -6,8 +6,8 @@ use base64::prelude::*;
 
 #[derive(Debug, Serialize)]
 struct CanvasInfoSize {
-    width: usize,
-    height: usize,
+    width: u16,
+    height: u16,
 }
 
 #[derive(Debug, Serialize)]
@@ -36,10 +36,7 @@ pub async fn canvas_get(
         (*canvas).valid = true;
     }
 
-    dbg!(&canvas.colors.len());
-    dbg!(&canvas.valid);
     let encoded_canvas = BASE64_STANDARD.encode(&canvas.colors);
-    println!("Encoded Vec<u8>({}) to {:?} ({})",  canvas.colors.len(), &encoded_canvas, &encoded_canvas.len()); 
 
     Ok(HttpResponse::Ok().json(CanvasInfoResponse {
         canvas: encoded_canvas,

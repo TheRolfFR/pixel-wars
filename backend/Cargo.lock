@@ -393,6 +393,7 @@ dependencies = [
  "actix-web-actors",
  "base64",
  "bincode",
+ "bytes",
  "env_logger",
  "log",
  "redis",
