@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
+use backend::{websocket, debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 use actix_cors::Cors;
 
 use redis;
@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
     // real-time db config
     let redis_url = config.redis_url.clone().unwrap_or(REDIS_CONNECTION_STRING.into());
     log::info!("Starting redis on {}", &redis_url);
-    let redis = redis::Client::open(redis_url).unwrap();
+    let redis_client = redis::Client::open(redis_url).unwrap();
 
     // Shared mutanle application state
     let app_state = web::Data::new(model::BackendAppState {
@@ -37,9 +37,8 @@ async fn main() -> std::io::Result<()> {
         }),
     });
 
-
-    dbg!(app_state.canvas_valid.lock().unwrap().colors.len());
-
+    // place server
+    let server = websocket::PlaceServer::new(redis_client.clone());
 
     // http server config
     let (ip, port) = if config.debug_mode {
@@ -58,8 +57,9 @@ async fn main() -> std::io::Result<()> {
         let mut app = App::new()
             .wrap(cors)
             .app_data(app_state.clone())
+            .app_data(web::Data::new(server.clone()))
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
-            .app_data(web::Data::new(redis.clone())) // db connection
+            .app_data(web::Data::new(redis_client.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
             // .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);

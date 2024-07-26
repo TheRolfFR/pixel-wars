@@ -23,9 +23,6 @@ pub async fn canvas_get(
 ) -> actix_web::Result<impl Responder> {
     let mut canvas = app_state.canvas_valid.lock().unwrap();
 
-    dbg!(&canvas.colors.len());
-    dbg!(&canvas.valid);
-
     if !canvas.valid {
         let mut con = redis.get_multiplexed_async_connection().await.map_err(BackendError::from)?;
         let opt_colors: Option<Vec<u8>> = con.get("canvas").await.map_err(BackendError::from)?;
