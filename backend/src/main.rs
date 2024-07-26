@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Mutex};
+use std::sync::Mutex;
 
 use backend::{debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 use actix_cors::Cors;
@@ -32,10 +32,13 @@ async fn main() -> std::io::Result<()> {
     // Shared mutanle application state
     let app_state = web::Data::new(model::BackendAppState {
         canvas_valid: Mutex::new(Canvas {
-            colors: vec![],
+            colors: vec![0; config.canvas_width*config.canvas_height/2],
             valid: false
         }),
     });
+
+
+    dbg!(app_state.canvas_valid.lock().unwrap().colors.len());
 
 
     // http server config
@@ -58,7 +61,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
-            .wrap(middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
+            // .wrap(middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
         if config.debug_mode {

@@ -15,10 +15,18 @@ impl Actor for MyWs {
 /// Handler for ws::Message message
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for MyWs {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+        dbg!(&msg);
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Text(text)) => ctx.text(text),
-            Ok(ws::Message::Binary(bin)) => ctx.binary(bin),
+            Ok(ws::Message::Binary(bin)) => {
+                let mut bytes_received = format!("Received {} bytes: ", bin.len());
+                for byte in &bin {
+                    bytes_received.push_str(&format!("{:#04x} ", byte));
+                }
+                println!("{bytes_received}");
+                ctx.binary(bin)
+            },
             _ => (),
         }
     }

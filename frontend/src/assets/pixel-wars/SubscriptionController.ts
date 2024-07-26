@@ -22,7 +22,7 @@ export default class SubscriptionController {
       return;
     }
     window.dispatchEvent(new CustomEvent<{ done: boolean }>("sessionLoaded", { detail: { done: true } }));
-    this.websocketServer = new WebSocket('wss://' + window.location.host + '/pixelwars/api/subscribe');
+    this.websocketServer = new WebSocket('ws://' + window.location.host + '/pixelwars/api/subscribe');
     this.websocketServer.addEventListener("message", this.receiveMessageHandler());
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
