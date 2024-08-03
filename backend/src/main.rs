@@ -4,6 +4,7 @@ use backend::{websocket, debug::add_reverse_proxy, model::{self, Canvas}, routes
 use actix_cors::Cors;
 
 use redis;
+use actix::*;
 use actix_web::{web, App, HttpServer};
 
 const REDIS_CONNECTION_STRING: &str = "redis://172.18.115.69/";
@@ -14,7 +15,7 @@ const PROD_WEB_PORT: u16 = 80;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
 
 
     // TODO: extract args better
@@ -38,7 +39,7 @@ async fn main() -> std::io::Result<()> {
     });
 
     // place server
-    let server = websocket::PlaceServer::new(redis_client.clone());
+    let server = websocket::PlaceServer::new(redis_client.clone(), config.clone()).start();
 
     // http server config
     let (ip, port) = if config.debug_mode {
@@ -61,7 +62,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis_client.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
-            // .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
+            .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
         if config.debug_mode {

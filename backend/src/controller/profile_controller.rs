@@ -12,7 +12,7 @@ const COOKIE_NAME: &str = "sessionUUID";
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ClientTimeoutResponse {
-    last_timeout: f64,
+    last_timestamp: f64,
     remaining_pixels: usize
 }
 
@@ -51,7 +51,7 @@ pub async fn client_timeout(
     }
 
     Ok(HttpResponse::Ok().json(ClientTimeoutResponse {
-        last_timeout: client.last_timestamp,
+        last_timestamp: client.last_timestamp,
         remaining_pixels: client.remaining_pixels
     }))
 }

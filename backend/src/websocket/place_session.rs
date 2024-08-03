@@ -1,5 +1,10 @@
 use actix_web_actors::ws;
 use actix::prelude::*;
+use bincode::{deserialize_from, Error};
+use bytes::Bytes;
+use std::io::{Cursor, Read};
+
+use crate::model;
 
 use super::place_server::{ConnectMessage, DisconnectMessage, OnlineUserCountMessage, PlaceServer};
 
@@ -14,6 +19,7 @@ impl Actor for PlaceSession {
     type Context = ws::WebsocketContext<Self>;
 
     fn started(&mut self, ctx: &mut Self::Context) {
+        log::info!("User #{} connected", self.uuid);
         let addr = ctx.address();
         self.place_server.send(ConnectMessage {
             addr,
@@ -32,6 +38,7 @@ impl Actor for PlaceSession {
     }
 
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        log::info!("User #{} disconnecting", self.uuid);
         self.place_server.do_send(DisconnectMessage {
             author_uuid: self.uuid.clone()
         });
@@ -47,14 +54,54 @@ impl Handler<OnlineUserCountMessage> for PlaceSession {
     }
 }
 
+impl model::PixelColorUpdateMessage {
+    pub fn deserialize(data: &[u8]) -> Result<Self, &'static str> {
+        if data.len() < 5 {
+            return Err("Error deserializing pixel color update");
+        }
+
+        let pos_x = u16::from_be_bytes([data[0], data[1]]);
+        let pos_y = u16::from_be_bytes([data[2], data[3]]);
+        let color =  data[4];
+        Ok(Self {
+            pos_x,
+            pos_y,
+            color
+        })
+    }
+}
+
+impl PlaceSession {
+    pub fn place_pixel(&mut self, bin: &[u8], ctx: &mut ws::WebsocketContext<PlaceSession>) -> Result<(), ()>
+    {
+        let pixel_update = model::PixelColorUpdateMessage::deserialize(bin).map_err(|_| ())?;
+        dbg!(&pixel_update);
+
+        let user_pixel_update = model::UserPixelColorMessage {
+            pixel_update,
+            uuid: self.uuid.clone()
+        };
+
+        self.place_server.send(user_pixel_update)
+        .into_actor(self)
+        .then(|res, _, _| {
+            dbg!(res);
+            fut::ready(())
+        })
+        .wait(ctx);
+
+        Ok(())
+    }
+}
+
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for PlaceSession {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+        dbg!(&msg);
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Text(text)) => ctx.text(text),
             Ok(ws::Message::Binary(bin)) => {
-                // handle_binary(bin.clone(), self).await.ok();
-                ctx.binary(bin)
+                self.place_pixel(&bin[..], ctx).ok();
             },
             _ => (),
         }
