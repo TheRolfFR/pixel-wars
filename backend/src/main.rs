@@ -32,10 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     // Shared mutanle application state
     let app_state = web::Data::new(model::BackendAppState {
-        canvas_valid: Mutex::new(Canvas {
-            colors: vec![0; (config.canvas_width as usize) * (config.canvas_height as usize) / 2],
-            valid: false
-        }),
+        canvas_valid: Mutex::new(Canvas::new(config.canvas_width as usize, config.canvas_height as usize)),
     });
 
     // place server
@@ -62,7 +59,7 @@ async fn main() -> std::io::Result<()> {
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis_client.clone())) // db connection
             .app_data(web::Data::new(config.clone())) // canvas config
-            .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
+            // .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
         if config.debug_mode {

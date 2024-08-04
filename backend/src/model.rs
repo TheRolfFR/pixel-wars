@@ -40,6 +40,15 @@ pub struct BackendError {
     pub details: String
 }
 
+impl BackendError {
+    pub fn new(
+        error: &'static str,
+        details: String
+    ) -> Self {
+        Self { error, details }
+    }
+}
+
 impl std::fmt::Display for BackendError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Backend error: {}    details: {}", self.error, self.details)
@@ -82,6 +91,15 @@ impl From<serde_json::Error> for BackendError {
 pub struct Canvas {
     pub valid: bool,
     pub colors: Vec<u8>
+}
+
+impl Canvas {
+    pub fn new(canvas_width: usize, canvas_height: usize) -> Self {
+        Canvas {
+            colors: vec![0; canvas_width as usize * canvas_height as usize / 2],
+            valid: false
+        }
+    }
 }
 
 #[derive(Debug)]

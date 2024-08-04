@@ -3,7 +3,7 @@ use std::{collections::HashMap, time::{Duration, SystemTime, UNIX_EPOCH}};
 use actix::prelude::*;
 use redis::{self, Commands};
 
-use crate::model::{self, PixelColorUpdateMessage};
+use crate::{controller::canvas_redis_set, model::{self, PixelColorUpdateMessage}};
 
 use super::place_session::PlaceSession;
 
@@ -139,6 +139,10 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
             .map_err(|e| e.to_string())?;
         con.set(uuid, client_string)
             .map_err(|e| e.to_string())?;
+
+        // update db
+        canvas_redis_set(&self.redis_client, config, &pixel_update)?;
+
 
         // notify sessions
         self.send_pixel_update(pixel_update);
