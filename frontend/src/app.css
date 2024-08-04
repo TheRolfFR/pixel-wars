@@ -1,9 +1,10 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
   color-scheme: light dark;
   color: var(--vanilla);
-  background-color: var(--rich-black);
+  /* background-color: var(--rich-black); */
+  background-color: #181A1B;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -15,12 +16,16 @@
   --midnight-green: #005f73ff;
   --dark-cyan: #0a9396ff;
   --tiffany-blue: #94d2bdff;
-  --vanilla: #e9d8a6ff;
+  --vanilla: white;
   --gamboge: #ee9b00ff;
   --alloy-orange: #ca6702ff;
   --rust: #bb3e03ff;
   --rufous: #ae2012ff;
   --auburn: #9b2226ff;
+
+  --card-spacing: 1rem;
+
+  box-sizing: border-box;
 }
 
 a {
@@ -42,10 +47,17 @@ body {
   width: 100%;
 }
 
+.card {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
+  border-radius: 1rem;
+  padding: 1.2rem;
+}
+
 @media (prefers-color-scheme: light) {
   :root {
     color: var(--rust);
-    background-color: var(--vanilla);
+    /* background-color: var(--vanilla); */
   }
 
   a {
