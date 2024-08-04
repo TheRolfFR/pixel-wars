@@ -15,7 +15,7 @@ const PROD_WEB_PORT: u16 = 80;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    env_logger::init_from_env(env_logger::Env::new().default_filter_or("debug"));
+    env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
 
 
     // TODO: extract args better
