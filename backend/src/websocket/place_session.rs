@@ -1,8 +1,7 @@
+use std::io::Write;
+
 use actix_web_actors::ws;
 use actix::prelude::*;
-use bincode::{deserialize_from, Error};
-use bytes::Bytes;
-use std::io::{Cursor, Read};
 
 use crate::model;
 
@@ -69,13 +68,28 @@ impl model::PixelColorUpdateMessage {
             color
         })
     }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        buffer.write_all(&self.pos_x.to_be_bytes()).unwrap();
+        buffer.write_all(&self.pos_y.to_be_bytes()).unwrap();
+        buffer.write_all(&self.color.to_be_bytes()).unwrap();
+        buffer
+    }
+}
+
+impl Handler<model::PixelColorUpdateMessage> for PlaceSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: model::PixelColorUpdateMessage, ctx: &mut Self::Context) -> Self::Result {
+        ctx.binary(msg.serialize());
+    }
 }
 
 impl PlaceSession {
     pub fn place_pixel(&mut self, bin: &[u8], ctx: &mut ws::WebsocketContext<PlaceSession>) -> Result<(), ()>
     {
         let pixel_update = model::PixelColorUpdateMessage::deserialize(bin).map_err(|_| ())?;
-        dbg!(&pixel_update);
 
         let user_pixel_update = model::UserPixelColorMessage {
             pixel_update,
@@ -84,8 +98,18 @@ impl PlaceSession {
 
         self.place_server.send(user_pixel_update)
         .into_actor(self)
-        .then(|res, _, _| {
-            dbg!(res);
+        .then(|res, _, ctx| {
+            let opt_err = res
+                .map_err(|e| e.to_string())
+                .and_then(|inner| inner)
+                .err();
+
+            dbg!(&opt_err);
+
+            if let Some(err) = opt_err {
+                ctx.text(err);
+            }
+
             fut::ready(())
         })
         .wait(ctx);
@@ -96,7 +120,6 @@ impl PlaceSession {
 
 impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for PlaceSession {
     fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
-        dbg!(&msg);
         match msg {
             Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
             Ok(ws::Message::Text(text)) => ctx.text(text),

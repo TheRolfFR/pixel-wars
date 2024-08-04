@@ -111,7 +111,7 @@ impl Client {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Message)]
+#[derive(Debug, Serialize, Deserialize, Clone, Message)]
 #[rtype(result = "()")]
 pub struct PixelColorUpdateMessage {
     pub pos_x: u16,
@@ -119,11 +119,12 @@ pub struct PixelColorUpdateMessage {
     pub color: u8
 }
 
-#[derive(Debug, Serialize, Deserialize, Message)]
-#[rtype(result = "()")]
+#[derive(Debug, Serialize, Deserialize, Clone, Message)]
+#[rtype(result = "Result<(), String>")]
 pub struct UserPixelColorMessage {
     pub pixel_update: PixelColorUpdateMessage,
     pub uuid: String
 }
 
 pub const SESSION_COOKIE_NAME: &str = "sessionUUID";
+pub const CANVAS_DB_KEY: &str = "canvas";

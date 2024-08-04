@@ -25,7 +25,7 @@ pub async fn canvas_get(
 
     if !canvas.valid {
         let mut con = redis.get_multiplexed_async_connection().await.map_err(BackendError::from)?;
-        let opt_colors: Option<Vec<u8>> = con.get("canvas").await.map_err(BackendError::from)?;
+        let opt_colors: Option<Vec<u8>> = con.get(model::CANVAS_DB_KEY).await.map_err(BackendError::from)?;
 
         if let Some(colors) = opt_colors {
             (*canvas).colors = colors;
