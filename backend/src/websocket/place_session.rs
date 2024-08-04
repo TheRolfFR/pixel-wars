@@ -104,8 +104,6 @@ impl PlaceSession {
                 .and_then(|inner| inner)
                 .err();
 
-            dbg!(&opt_err);
-
             if let Some(err) = opt_err {
                 ctx.text(err);
             }

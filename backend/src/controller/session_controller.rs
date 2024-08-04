@@ -43,7 +43,7 @@ pub async fn session_get(
     // create client with last seen timestamp
     let start = SystemTime::now();
     let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    let in_seconds = since_the_epoch.as_secs_f64() * 1000f64;
+    let in_seconds = since_the_epoch.as_secs_f64();
     let client = model::Client {
         profile: None,
         last_timestamp: in_seconds,

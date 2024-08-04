@@ -12,7 +12,7 @@ const COOKIE_NAME: &str = "sessionUUID";
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ClientTimeoutResponse {
-    last_timestamp: f64,
+    last_timestamp: usize,
     remaining_pixels: usize
 }
 
@@ -36,9 +36,10 @@ pub async fn client_timeout(
 
     let start = SystemTime::now();
     let current_timestamp = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    let last_timestamp = Duration::seconds_f64(client.last_timestamp) * 1000f64;
+    let last_timestamp = Duration::seconds_f64(client.last_timestamp);
     let duration = current_timestamp - last_timestamp;
 
+    dbg!(&current_timestamp, &last_timestamp, duration.abs());
     if duration.abs() > Duration::MINUTE {
         client.remaining_pixels = config.pixels_per_minute;
         client.last_timestamp = current_timestamp.as_secs_f64();
@@ -51,7 +52,7 @@ pub async fn client_timeout(
     }
 
     Ok(HttpResponse::Ok().json(ClientTimeoutResponse {
-        last_timestamp: client.last_timestamp,
+        last_timestamp: client.last_timestamp.ceil() as usize,
         remaining_pixels: client.remaining_pixels
     }))
 }

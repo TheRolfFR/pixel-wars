@@ -21,7 +21,7 @@ pub async fn subscription_get(
     let mut con = redis.get_multiplexed_async_connection().await
         .map_err(BackendError::from)?;
 
-    con.get::<_,Option<String>>(&uuid).await
+    con.exists::<_,()>(&uuid).await
         .map_err(BackendError::from)?;
 
     log::info!("Starting PlaceSession for #{}", uuid);

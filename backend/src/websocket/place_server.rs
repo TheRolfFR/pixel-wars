@@ -131,6 +131,7 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
             client.remaining_pixels = config.pixels_per_minute;
             client.last_timestamp = current_timestamp.as_secs_f64();
         }
+        dbg!(&client);
         if client.remaining_pixels == 0 {
             return Err("No pixels left".to_string());
         }
