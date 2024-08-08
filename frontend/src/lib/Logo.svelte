@@ -29,7 +29,6 @@
         left: var(--card-spacing);
         display: flex;
         align-items: center;
-        z-index: 1000;
         gap: var(--card-spacing);
     }
     #logo-card {

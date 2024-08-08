@@ -1,5 +1,6 @@
 $card_padding: 0.6rem;
 $logo_height: 2rem;
+$smoll_width: 400px;
 
 :root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -27,6 +28,8 @@ $logo_height: 2rem;
   --card-spacing: 1rem;
   --card-padding: $card_padding;
   --logo-height: $logo_height;
+
+  --smoll-width: 400px;
 }
 
 * {
@@ -57,13 +60,27 @@ body {
   place-items: center;
 }
 
-.card {
+#app > * {
   z-index: 1000;
+}
+
+.card {
   background: white;
   color: black;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px, rgba(0, 0, 0, 0.1) 0px 8px 10px -6px;
   border-radius: 0.6rem;
   padding: $card_padding 2*$card_padding;
+}
+
+@media (min-width: $smoll_width) {
+  .mobile {
+    display: none;
+  }
+}
+@media (max-width: $smoll_width) {
+  .desktop {
+    display: none;
+  }
 }
 
 @media (prefers-color-scheme: light) {
