@@ -42,6 +42,10 @@ export default class CanvasElementController {
   private canvas_move_frame_asked = false;
   private canvas_update_frame_asked = false;
 
+  private mobile_is_zooming = false;
+  private mobile_pinch_length_last = 0;
+  private mobile_pan_position_last = [0,0];
+
   constructor(canvas: HTMLCanvasElement, map_size = DEFAULT_SIZE) {
     this.canvas = canvas;
     this.setSize(map_size);
@@ -63,6 +67,13 @@ export default class CanvasElementController {
     window.addEventListener("mousedown", (e) => {
       if (e.button == LEFT_BUTTON || e.button == MIDDLE_BUTTON) {
         e.preventDefault();
+        this.canvas_can_move = true;
+      }
+    });
+
+    window.addEventListener("touchstart", (touch) => {
+      if (touch.touches.length == 1) {
+        touch.preventDefault();
         this.canvas_can_move = true;
       }
     });
@@ -94,8 +105,10 @@ export default class CanvasElementController {
       this.placePixel(...xy);
     });
     this.canvas.addEventListener("mousemove", (e: MouseEvent) => {
+      const movementX = e.movementX;
+      const movementY = e.movementY;
       if (this.canvas_can_place)
-        this.canvas_can_place = (e.movementX <= 1 && e.movementX >= -1) || (e.movementY <= 1 && e.movementY >= -1);
+        this.canvas_can_place = (movementX <= 1 && movementX >= -1) || (movementY <= 1 && movementY >= -1);
 
       const [x, y] = this.getCursorCanvasPosition(e);
       this.cursor_canvas_x = x;
@@ -104,12 +117,74 @@ export default class CanvasElementController {
       if(this.canvas_can_move && !this.canvas_move_frame_asked) {
         this.canvas_move_frame_asked = true;
         window.requestAnimationFrame(() => {
-          const delta_x = ((e.movementX * 5) / this.canvas_zoom) * 0.2;
-          const delta_y = ((e.movementY * 5) / this.canvas_zoom) * 0.2;
+          const delta_x = ((movementX * 5) / this.canvas_zoom) * 0.2;
+          const delta_y = ((movementY * 5) / this.canvas_zoom) * 0.2;
           this.canvas_view_translate_x = String(parseFloat(this.canvas_view_translate_x) + delta_x + "px");
           this.canvas_view_translate_y = String(parseFloat(this.canvas_view_translate_y) + delta_y + "px");
           this.canvas_move_frame_asked = false;
         });
+      }
+    });
+
+    // touch equivalent
+    this.canvas.addEventListener("touchstart", (touch) => {
+      touch.preventDefault();
+      if (touch.touches.length == 2) {
+        this.mobile_pinch_length_last = Math.hypot(
+          touch.touches[0].clientX - touch.touches[1].clientX,
+          touch.touches[0].clientY - touch.touches[1].clientY
+        );
+        this.mobile_is_zooming = true;
+      } else if (touch.touches.length == 1) {
+        this.mobile_pan_position_last = [
+          touch.touches[0].clientX,
+          touch.touches[0].clientY,
+        ];
+        this.canvas_can_move = true;
+        this.canvas_can_place = true;
+      }
+    });
+    this.canvas.addEventListener("touchmove", (touch) => {
+      if (touch.touches.length == 2 && this.mobile_is_zooming) {
+        const mobile_pinch_length = Math.hypot(
+          touch.touches[0].clientX - touch.touches[1].clientX,
+          touch.touches[0].clientY - touch.touches[1].clientY
+        );
+        if (mobile_pinch_length - this.mobile_pinch_length_last == 0) return;
+
+        const scalediff = (mobile_pinch_length - this.mobile_pinch_length_last) * 0.01;
+        this.canvas_zoom = numberClamp(this.canvas_zoom + scalediff, 0.3, 8);
+        this.mobile_pinch_length_last = mobile_pinch_length;
+      } else if (touch.touches.length == 1) {
+        const movementX = touch.touches[0].clientX - this.mobile_pan_position_last[0];
+        const movementY = touch.touches[0].clientY - this.mobile_pan_position_last[1];
+        if (this.canvas_can_place)
+          this.canvas_can_place = (movementX <= 1 && movementX >= -1) || (movementY <= 1 && movementY >= -1);
+
+        this.mobile_pan_position_last[0] = touch.touches[0].clientX;
+        this.mobile_pan_position_last[1] = touch.touches[0].clientY;
+
+        if(this.canvas_can_move && !this.canvas_move_frame_asked) {
+          this.canvas_move_frame_asked = true;
+          window.requestAnimationFrame(() => {
+            const delta_x = ((movementX * 5) / this.canvas_zoom) * 0.2;
+            const delta_y = ((movementY * 5) / this.canvas_zoom) * 0.2;
+            this.canvas_view_translate_x = String(parseFloat(this.canvas_view_translate_x) + delta_x + "px");
+            this.canvas_view_translate_y = String(parseFloat(this.canvas_view_translate_y) + delta_y + "px");
+            this.canvas_move_frame_asked = false;
+          });
+        }
+      }
+    });
+    this.canvas.addEventListener("touchend", (touch) => {
+      this.canvas_can_move = false;
+      if (touch.changedTouches.length == 2 && this.mobile_is_zooming) {
+        this.mobile_is_zooming = false;
+      } else if (touch.changedTouches.length == 1) {
+        if (!this.canvas_can_place) return;
+
+        const xy = this.getCursorCanvasPositionMobile(touch);
+        this.placePixel(...xy);
       }
     });
   }
@@ -118,6 +193,13 @@ export default class CanvasElementController {
     const rect = this.canvas.getBoundingClientRect();
     const x = Math.max(Math.ceil((event.clientX - rect.left) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
     const y = Math.max(Math.ceil((event.clientY - rect.top) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    return [ x, y ];
+  }
+
+  private getCursorCanvasPositionMobile(event: TouchEvent): [number, number] {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.max(Math.ceil((event.changedTouches[0].clientX - rect.left) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    const y = Math.max(Math.ceil((event.changedTouches[0].clientY - rect.top) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
     return [ x, y ];
   }
 
