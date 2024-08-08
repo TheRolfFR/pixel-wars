@@ -1,164 +1,141 @@
+const CANVAS_SCALE = 3;
+const DEFAULT_SIZE = 252;
+
+const LEFT_BUTTON = 0;
+const MIDDLE_BUTTON = 1;
+
+function numberClamp(num, min, max) {
+  return Math.min(Math.max(num, min), max)
+}
+
+export const CANVAS_UPDATE = "canvasUpdate";
+
 export default class CanvasElementController {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   pixels: CanvasPixels;
 
-  private scale = 1;
-  private lastDir = false;
-  private beginX = 0;
-  private beginY = 0;
-  private pressed = false;
-  private moved = false;
+  private _canvas_zoom = 5;
+  public get canvas_zoom() { return this._canvas_zoom }
+  public set canvas_zoom(value) { this._canvas_zoom = value; this.emit('canvas_zoom', value) }
 
-  private zoomMobile = false;
-  private prevDiff = 0;
-  private prevPos = { x: 0, y: 0 };
+  private cursor_position_x = "0px";
+  private cursor_position_y = "0px";
 
+  private _canvas_view_translate_x = "0px";
+  public get canvas_view_translate_x() { return this._canvas_view_translate_x }
+  public set canvas_view_translate_x(value) { this._canvas_view_translate_x = value; this.emit('canvas_view_translate_x', value) }
+  private _canvas_view_translate_y = "0px";
+  public get canvas_view_translate_y() { return this._canvas_view_translate_y }
+  public set canvas_view_translate_y(value) { this._canvas_view_translate_y = value; this.emit('canvas_view_translate_y', value) }
 
-  constructor(canvas: HTMLCanvasElement) {
+  private _cursor_canvas_x = 0;
+  public get cursor_canvas_x() { return this._cursor_canvas_x }
+  public set cursor_canvas_x(value) { this._cursor_canvas_x = value; this.emit('cursor_canvas_x', value) }
+  private _cursor_canvas_y = 0;
+  public get cursor_canvas_y() { return this._cursor_canvas_y }
+  public set cursor_canvas_y(value) { this._cursor_canvas_y = value; this.emit('cursor_canvas_y', value) }
+
+  private canvas_can_move = false;
+  private canvas_can_place = false;
+
+  private canvas_move_frame_asked = false;
+  private canvas_update_frame_asked = false;
+
+  constructor(canvas: HTMLCanvasElement, map_size = DEFAULT_SIZE) {
     this.canvas = canvas;
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    this.setSize(map_size);
     this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
-    this.setListeners();
+    this.ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
+
+    this.updateCanvas();
+
+    this.registerEventListeners();
   }
 
-  private draw(transformCoords: { x: number, y: number }) {
-    let matrix = this.ctx.getTransform();
-    this.ctx.resetTransform();
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    matrix.e += transformCoords.x;
-    matrix.f += transformCoords.y;
-    this.ctx.setTransform(matrix);
-    this.ctx.scale(this.scale, this.scale);
-    for (let h = 0; h < this.pixels.height; h++) {
-      for (let w = 0; w < this.pixels.width; w++) {
-        this.putPixel(w, h, this.pixels.colors[w + (this.pixels.width * h)]);
-      }
-    }
+  public setSize(map_size = DEFAULT_SIZE) {
+    this.canvas.width = map_size * CANVAS_SCALE;
+    this.canvas.height = map_size * CANVAS_SCALE;
   }
 
-  private setListeners() {
-    this.canvas.addEventListener('resize', () => {
-      this.canvas.width = window.innerWidth;
-      this.canvas.height = window.innerHeight;
-
-      this.ctx = this.canvas.getContext('2d');
-      this.draw({ x: 0, y: 0 });
-    });
-
-    this.canvas.addEventListener("wheel", (pog: WheelEvent) => {
-      pog.preventDefault();
-      if (pog.deltaY < 0 != this.lastDir) {
-        this.lastDir = false;
-        this.scale = 1;
-      } else this.lastDir = true;
-      this.scale += Math.min(pog.deltaY, 200) * -0.001;
-      this.draw({ x: 0, y: 0 });
-    }, { passive: false });
-
-    this.canvas.addEventListener("mousedown", (pog: MouseEvent) => {
-      pog.preventDefault();
-      if (this.pressed == false && pog.button == 0) {
-        this.scale = 1;
-        this.beginX = pog.x;
-        this.beginY = pog.y;
-        this.pressed = true;
-        return;
+  private registerEventListeners() {
+    window.addEventListener("mousedown", (e) => {
+      if (e.button == LEFT_BUTTON || e.button == MIDDLE_BUTTON) {
+        e.preventDefault();
+        this.canvas_can_move = true;
       }
     });
 
-    this.canvas.addEventListener("mouseup", (pog) => {
-      this.pressed = false;
-      this.beginX = 0;
-      this.beginY = 0;
-      if (pog.button == 0 && this.moved == false) this.clickHandler(pog);
-      this.moved = false;
-    }
-    );
-
-    this.canvas.addEventListener("mousemove", (pog) => {
-      if (this.pressed) {
-        this.draw({ x: pog.x - this.beginX, y: pog.y - this.beginY });
-        this.beginY = pog.y;
-        this.beginX = pog.x;
-        this.moved = true;
-      }
+    window.addEventListener("mouseup", () => {
+      this.canvas_can_move = false;
     });
 
-    this.canvas.addEventListener("touchstart", (touch) => {
-      touch.preventDefault();
-      if (touch.touches.length == 2) {
-        this.prevDiff = Math.hypot(touch.touches[0].clientX - touch.touches[1].clientX,
-          touch.touches[0].clientY - touch.touches[1].clientY);
-        this.zoomMobile = true;
-        this.scale = 1;
-      } else if (touch.touches.length == 1) {
-        console.log(touch.touches);
-        this.scale = 1;
-        this.prevPos.x = touch.touches[0].clientX;
-        this.prevPos.y = touch.touches[0].clientY;
-        this.moved = true;
-        this.pressed = true;
-      }
+    window.addEventListener("wheel", (e) => {
+      this.canvas_zoom = numberClamp(this.canvas_zoom + (e.deltaY < 0 ? 0.2 : -0.2), 0.3, 8);
     });
-    this.canvas.addEventListener("touchmove", (touch) => {
-      if (touch.touches.length == 2 && this.zoomMobile) {
-        const diff = Math.hypot(touch.touches[0].clientX - touch.touches[1].clientX,
-          touch.touches[0].clientY - touch.touches[1].clientY);
-        if (diff - this.prevDiff == 0) return;
-        this.scale += (diff - this.prevDiff) * 0.004;
-        if (this.scale < 0.5) {
-          this.scale = 0.5;
-        } else if (this.scale > 1.5) {
-          this.scale = 1.5;
-        }
-        console.log(diff - this.prevDiff, this.scale);
-        this.prevDiff = diff;
-        this.draw({ x: 0, y: 0 });
-      } else if (touch.touches.length == 1 && this.moved) {
-        console.log(touch.touches[0].clientX - this.prevPos.x, touch.touches[0].clientY - this.prevPos.y);
-        this.draw({ x: touch.touches[0].clientX - this.prevPos.x, y: touch.touches[0].clientY - this.prevPos.y })
-        this.prevPos.x = touch.touches[0].clientX;
-        this.prevPos.y = touch.touches[0].clientY;
-        this.pressed = false;
 
+    window.addEventListener("mousemove", (e) => {
+      window.requestAnimationFrame(() => {
+        this.cursor_position_x = `${Math.floor(e.clientX)}px`;
+        this.cursor_position_y = `${Math.floor(e.clientY)}px`;
+      });
+    });
+
+    this.canvas.addEventListener("mousedown", (e: MouseEvent) => {
+      if (e.button == LEFT_BUTTON) {
+        this.canvas_can_place = true;
       }
     });
-    this.canvas.addEventListener("touchend", (touch) => {
-      if (touch.changedTouches.length == 2 && this.zoomMobile) {
-        this.zoomMobile = false;
-        this.prevDiff = 0;
-        this.scale = 1;
-      } else if (touch.changedTouches.length == 1 && this.moved && !this.pressed) {
-        this.moved = false;
-        this.prevDiff = 0;
-      } else if (touch.changedTouches.length == 1 && this.pressed){
-        this.clickHandler({x: touch.changedTouches[0].clientX, y:touch.changedTouches[0].clientY});
-        this.prevPos = {x:0, y:0};
-        this.moved = false;
-        this.pressed = false;
+    this.canvas.addEventListener("mouseup", (e: MouseEvent) => {
+      if (e.button != LEFT_BUTTON || !this.canvas_can_place) return;
+
+      const xy = this.getCursorCanvasPosition(e);
+      this.placePixel(...xy);
+    });
+    this.canvas.addEventListener("mousemove", (e: MouseEvent) => {
+      if (this.canvas_can_place)
+        this.canvas_can_place = (e.movementX <= 1 && e.movementX >= -1) || (e.movementY <= 1 && e.movementY >= -1);
+
+      const [x, y] = this.getCursorCanvasPosition(e);
+      this.cursor_canvas_x = x;
+      this.cursor_canvas_y = y;
+
+      if(this.canvas_can_move && !this.canvas_move_frame_asked) {
+        this.canvas_move_frame_asked = true;
+        window.requestAnimationFrame(() => {
+          const delta_x = ((e.movementX * 5) / this.canvas_zoom) * 0.2;
+          const delta_y = ((e.movementY * 5) / this.canvas_zoom) * 0.2;
+          this.canvas_view_translate_x = String(parseFloat(this.canvas_view_translate_x) + delta_x + "px");
+          this.canvas_view_translate_y = String(parseFloat(this.canvas_view_translate_y) + delta_y + "px");
+          this.canvas_move_frame_asked = false;
+        });
       }
-    })
+    });
   }
 
-  private clickHandler(coords: {x: number, y:number}) {
-    const canvasBoundingBox = this.canvas.getBoundingClientRect();
-    const scale = this.ctx.getTransform().a;
-    const xTransform = this.ctx.getTransform().e;
-    const yTransform = this.ctx.getTransform().f;
+  private getCursorCanvasPosition(event: MouseEvent): [number, number] {
+    const rect = this.canvas.getBoundingClientRect();
+    const x = Math.max(Math.ceil((event.clientX - rect.left) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    const y = Math.max(Math.ceil((event.clientY - rect.top) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    return [ x, y ];
+  }
 
-    const pixelX = Math.floor((coords.x - canvasBoundingBox.x - xTransform) / scale);
-    const pixelY = Math.floor((coords.y - canvasBoundingBox.y - yTransform) / scale);
-    window.dispatchEvent(new CustomEvent("pixelClicked", { detail: { x: pixelX, y: pixelY } }));
-    console.log(pixelX, pixelY);
+  private placePixel(x: number, y: number) {
+    window.dispatchEvent(new CustomEvent("pixelClicked", { detail: { x, y } }));
+    console.log(x, y);
+  }
+
+  private emit(field: string, value: unknown) {
+    window.dispatchEvent(new CustomEvent(CANVAS_UPDATE, { detail: {
+      field,
+      value
+    }}));
   }
 
   putCanvasPixels(canvasPixels: CanvasPixels) {
     this.pixels = canvasPixels;
-    this.scale = this.canvas.width / canvasPixels.width * 1.5;
-    this.draw({ x: 0, y: 0 });
+    this.updateCanvas();
   }
 
   private putPixel(x: number, y: number, [r, g, b, a]: Color) {
@@ -168,8 +145,23 @@ export default class CanvasElementController {
 
   putPixelCanvas(x: number, y: number, color: Color) {
     this.pixels.colors[x + (this.pixels.width * y)] = color;
-    if (this.scale != 1) this.scale = 1;
-    this.draw({ x: 0, y: 0 });
+    this.updateCanvas();
+
+    this.canvas_update_frame_asked = true;
+    if (this.canvas_update_frame_asked) window.requestAnimationFrame(() => this.updateCanvas())
+  }
+
+  private updateCanvas() {
+    if(this.pixels === undefined) return;
+
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    for (let h = 0; h < this.pixels.height; h++) {
+      for (let w = 0; w < this.pixels.width; w++) {
+        this.putPixel(w, h, this.pixels.colors[w + (this.pixels.width * h)]);
+      }
+    }
+
+    this.canvas_update_frame_asked = false;
   }
 }
 

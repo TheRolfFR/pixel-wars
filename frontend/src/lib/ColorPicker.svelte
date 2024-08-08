@@ -15,7 +15,7 @@
 <div id="color-picker" class="card">
     <div id="palette-grid">
         {#each ColorPallete as color, i}
-            <button class="color-block" style="background-color: rgb({color[0]},{color[1]},{color[2]});"
+            <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
                 on:click="{changeColor(i)}"
                 class:color-block-active="{i === number}">
             </button>
@@ -45,7 +45,10 @@
     .color-block {
         height: $block_size;
         width: $block_size;
-        border: 0;
+        border: 0.2rem solid transparent;
+        transition: border 0.2s;
+        position: relative;
+        box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
     }
 
     #pixels-left {
@@ -55,6 +58,9 @@
     }
 
     .color-block-active{
-        border: 0.2rem solid red;
+        border: 0.2rem solid rgba(255,255,255,0.4);
+    }
+    .color-block-active.white {
+        border-color: lightgrey;
     }
 </style>

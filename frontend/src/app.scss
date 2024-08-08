@@ -1,3 +1,6 @@
+$card_padding: 0.6rem;
+$logo_height: 2rem;
+
 :root {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
@@ -6,11 +9,9 @@
   /* background-color: var(--rich-black); */
   background-color: #181A1B;
 
-  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
 
   --rich-black: #001219ff;
   --midnight-green: #005f73ff;
@@ -24,8 +25,15 @@
   --auburn: #9b2226ff;
 
   --card-spacing: 1rem;
+  --card-padding: $card_padding;
+  --logo-height: $logo_height;
+}
 
-  box-sizing: border-box;
+* {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	outline: none;
 }
 
 a {
@@ -37,21 +45,25 @@ a:hover {
   color: var(--gamboge);
 }
 
+html, body, #app, #canvas-container {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   display: flex;
   place-items: center;
 }
 
-#app {
-  width: 100%;
-}
-
 .card {
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0px 1px 2px 0px rgba(0, 0, 0, 0.3);
-  border-radius: 1rem;
-  padding: 1.2rem;
+  z-index: 1000;
+  background: white;
+  color: black;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 20px 25px -5px, rgba(0, 0, 0, 0.1) 0px 8px 10px -6px;
+  border-radius: 0.6rem;
+  padding: $card_padding 2*$card_padding;
 }
 
 @media (prefers-color-scheme: light) {

@@ -1,10 +1,8 @@
 <script lang="ts">
-    import logo from '../assets/logo.png';
     import logoText from '../assets/logo-text.png';
 </script>
 
 <div id="logo-card" class="card">
-    <img src={logo} alt="rp" id="logo" />
     <img src={logoText} alt="rs/place" id="logo-text" />
 </div>
 
@@ -16,12 +14,9 @@
         display: flex;
         align-items: center;
 
-        #logo, #logo-text {
+        #logo-text {
             height: 2rem;
         }
-        #logo {
-            height: 2rem;
-            margin-right: 1.2rem;
-        }
+        border-radius: 1.6rem;
     }
 </style>
