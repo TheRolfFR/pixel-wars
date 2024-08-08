@@ -16,3 +16,5 @@ export const CanvasInfoStoreDefault = {
 };
 
 export const CanvasInfoStore = writable(CanvasInfoStoreDefault)
+
+export const OnlineCountStore = writable(0);

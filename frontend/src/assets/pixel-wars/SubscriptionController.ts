@@ -1,6 +1,6 @@
 import type CanvasElementController from './CanvasController';
 import { decodeColor } from './canvas';
-import { ColorPickerStore, TimeoutStore } from './stores';
+import { ColorPickerStore, OnlineCountStore, TimeoutStore } from './stores';
 import { get } from 'svelte/store';
 
 export default class SubscriptionController {
@@ -9,9 +9,6 @@ export default class SubscriptionController {
 
   constructor(canvasController: CanvasElementController) {
     this.canvasController = canvasController;
-    ColorPickerStore.subscribe((val) => {
-      console.log(val);
-    });
   }
 
 
@@ -65,7 +62,18 @@ export default class SubscriptionController {
 
   private receiveMessageHandler() {
     const subscription: SubscriptionController = this;
-    return async (message: MessageEvent<Blob>) => {
+    return async (message: MessageEvent<Blob|string>) => {
+      if(typeof(message.data) === 'string')
+      {
+        const [command, args] = message.data.split(' ');
+        if(command === '/count')
+        {
+          const count = Number.parseInt(args[0], 10);
+          OnlineCountStore.set(count)
+        }
+        return;
+      }
+
       const { x, y, color } = subscription.decodeMessage(await message.data.arrayBuffer());
 
       subscription.canvasController.putPixelCanvas(x, y, decodeColor(color));
