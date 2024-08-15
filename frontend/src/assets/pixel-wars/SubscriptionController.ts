@@ -24,7 +24,7 @@ export default class SubscriptionController {
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };
-      let timeout = get(TimeoutStore);
+      const timeout = get(TimeoutStore);
       if (timeout.remainingPixels == 0) return 0;
       timeout.remainingPixels--;
       TimeoutStore.set(timeout);
@@ -61,6 +61,7 @@ export default class SubscriptionController {
   }
 
   private receiveMessageHandler() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const subscription: SubscriptionController = this;
     return async (message: MessageEvent<Blob|string>) => {
       if(typeof(message.data) === 'string')

@@ -10,7 +10,7 @@ function numberClamp(num, min, max) {
 
 export const CANVAS_UPDATE = "canvasUpdate";
 
-export default class CanvasElementController {
+export class CanvasElementController {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   pixels: CanvasPixels;
@@ -205,7 +205,6 @@ export default class CanvasElementController {
 
   private placePixel(x: number, y: number) {
     window.dispatchEvent(new CustomEvent("pixelClicked", { detail: { x, y } }));
-    console.log(x, y);
   }
 
   private emit(field: string, value: unknown) {
@@ -233,7 +232,7 @@ export default class CanvasElementController {
     if (this.canvas_update_frame_asked) window.requestAnimationFrame(() => this.updateCanvas())
   }
 
-  private updateCanvas() {
+  updateCanvas() {
     if(this.pixels === undefined) return;
 
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -246,6 +245,7 @@ export default class CanvasElementController {
     this.canvas_update_frame_asked = false;
   }
 }
+export default CanvasElementController;
 
 export type Color = [number, number, number, number];
 

@@ -72,6 +72,11 @@ body {
   padding: $card_padding 2*$card_padding;
 }
 
+canvas {
+  background: black;
+  box-shadow: rgba(0, 0, 0, 0.4) 0px 20px 25px -5px, rgba(0, 0, 0, 0.4) 0px 8px 10px -6px;
+}
+
 @media (min-width: $smoll_width) {
   .mobile {
     display: none;
