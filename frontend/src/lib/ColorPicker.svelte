@@ -3,10 +3,7 @@
     import { ColorPickerStore } from "../assets/pixel-wars/stores";
     import { TimeoutStore } from '../assets/pixel-wars/stores';
 
-    let number = 0;
-
     const changeColor = num => (mouseEvent:MouseEvent) => {
-        number = num;
         const element = mouseEvent.target as Element;
         element.classList.add("color-block-active");
         ColorPickerStore.set(num);
@@ -19,7 +16,7 @@
                 {#each ColorPallete as color, i}
                     <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
                         on:click="{changeColor(i)}"
-                        class:color-block-active="{i === number}">
+                        class:color-block-active="{i === $ColorPickerStore}">
                     </button>
                 {/each}
             </div>

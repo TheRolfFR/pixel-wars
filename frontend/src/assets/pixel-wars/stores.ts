@@ -1,7 +1,8 @@
 import { writable } from "svelte/store";
+import { createStore } from "./utils/createStore";
 
 
-export const ColorPickerStore = writable(0);
+export const ColorPickerStore = createStore("COLOR_PICKER", 0, (s) => Number.parseInt(s, 10), v => v);
 
 export const TimeoutStore = writable({timeout: new Date(), remainingPixels: 0})
 
