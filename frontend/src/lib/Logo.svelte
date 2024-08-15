@@ -1,6 +1,7 @@
 <script lang="ts">
     import logoText from '../assets/logo-text.png';
-    import { OnlineCountStore } from '../assets/pixel-wars/stores';
+    import { OnlineCountStore, CanvasInfoStore } from "../assets/pixel-wars/stores";
+    import Icon from './Icon.svelte';
 
     const formatCount = n => {
         if (n < 1e3) return n;
@@ -10,17 +11,42 @@
         if (n >= 1e12) return +(n / 1e12).toFixed(1) + "T";
     };
 
-    $: onlineCount = formatCount($OnlineCountStore);
+    const is_touch_device = 'ontouchstart' in window;
+
+    $: online_count = formatCount($OnlineCountStore);
+
+    const precision = 1;
+    const power_precision = Math.pow(10, precision);
+    $: rounded_zoom = String(Math.round($CanvasInfoStore.canvas_zoom*power_precision)/power_precision);
 </script>
 
 <div id="topleft">
     <div id="logo-card" class="card">
         <img src={logoText} alt="rs/place" id="logo-text" />
     </div>
-    {#if $OnlineCountStore > 0}
-        <div id="online"><span>{onlineCount}</span><span id="onlinedot" /></div>
-    {/if}
+
+    <div id="tips">
+        <p>
+          <Icon variant="users" />
+          <span>{online_count}</span>
+        </p>
+        <p>
+          <Icon variant="edit" />
+          <span>{ is_touch_device ? "Tap" : "Left Click" }</span>
+        </p>
+        <p>
+          <Icon variant="move" />
+          <span>{ is_touch_device ? "Drag & Pinch" : "Click & Drag" }</span>
+        </p>
+      </div>
 </div>
+
+<div id="topright" class="card">
+    {#if !is_touch_device}
+        ({$CanvasInfoStore.cursor_canvas_x}, {$CanvasInfoStore.cursor_canvas_y}) 
+    {/if}{rounded_zoom}x
+</div>
+
 
 <style lang="scss">
     #topleft {
@@ -32,24 +58,45 @@
         gap: var(--card-spacing);
     }
     #logo-card {
+        border-radius: 1.6rem;
+
         #logo-text {
             height: 2rem;
             float: left;
         }
-        border-radius: 1.6rem;
     }
-    #online {
-        text-shadow: 0 0 3px #000000;
-        & > * {
-            display: inline-block;
-            vertical-align: middle;
+
+    #tips {
+        position: absolute;
+        left: 0;
+        top: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        font-weight: 500;
+        margin-left: var(--card-spacing);
+        margin-top: var(--card-spacing);
+
+        p {
+            display: flex;
+            justify-content: start;
+            justify-items: center;
+            gap: 0.5rem;
+            margin: 0;
+
+            &:global(> *:first-child) {
+                width: 1rem;
+            }
         }
-        #onlinedot {
-            height: 0.5rem;
-            width: 0.5rem;
-            margin-left: 0.2rem;
-            border-radius: 50%;
-            background: #38F286;
-        }
+    }
+
+    #topright {
+        position: fixed;
+        top: var(--card-spacing);
+        right: var(--card-spacing);
+        font-weight: bold;
+        line-height: 1rem;
+        font-size: 1rem;
+        border-radius: 1.1rem;
     }
 </style>
