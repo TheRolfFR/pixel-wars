@@ -6,7 +6,7 @@ export const ColorPickerStore = createStore("COLOR_PICKER", 0, (s) => Number.par
 
 export const TimeoutStore = writable({timeout: new Date(), remainingPixels: 0})
 
-export const CanvasInfoStoreDefault = {
+export const CanvasInfoStore = writable({
     canvas_zoom: 5,
 
     canvas_view_translate_x: "0px",
@@ -14,8 +14,9 @@ export const CanvasInfoStoreDefault = {
 
     cursor_canvas_x: 0,
     cursor_canvas_y: 0,
-};
 
-export const CanvasInfoStore = writable(CanvasInfoStoreDefault)
+    height: 0,
+    width: 0,
+})
 
 export const OnlineCountStore = writable(0);
