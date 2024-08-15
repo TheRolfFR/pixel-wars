@@ -2,6 +2,7 @@
     import { ColorPallete } from "../assets/pixel-wars/canvas";
     import { ColorPickerStore } from "../assets/pixel-wars/stores";
     import { TimeoutStore } from '../assets/pixel-wars/stores';
+    import TimeoutCounter from "./TimeoutCounter.svelte";
 
     const changeColor = num => (mouseEvent:MouseEvent) => {
         const element = mouseEvent.target as Element;
@@ -27,6 +28,7 @@
         <div class="pixels-left mobile">
             { $TimeoutStore.remainingPixels } pixels left
         </div>
+        <TimeoutCounter />
     </div>
 </div>
 <style lang="scss">

@@ -57,36 +57,42 @@
       remainingPixels: query.remainingPixels
     });
   });
+
+  function timeFormat(secs: number): String {
+    let hours = Math.floor(secs / 3600);
+    let minutes = Math.floor((secs % 3600) / 60);
+    let seconds = secs % 60;
+    let result = ``;
+    if(hours > 0) result += `${hours}h`;
+    if(minutes > 0) result += `${minutes}m`;
+
+    result += `${seconds}s`;
+
+    return result;
+  }
+
+  $: show_counter = $TimeoutStore.remainingPixels == 0 && secondsLeft > 0;
 </script>
 
-<div id="canvas-overlay" class:canvas-overlay-active={$TimeoutStore.remainingPixels == 0}>
-  <div id="canvas-bg" />
-  <h1>You changed too many pixels!</h1>
-  <h2>Seconds left: {secondsLeft}</h2>
+<div id="timeout-message" class:active={show_counter}>
+  <p>You changed too many pixels!</p>
+  <p>More pixels in {timeFormat(secondsLeft)}</p>
 </div>
 
 <style>
-  #canvas-overlay {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    grid-column: 1;
-    grid-row: 1;
-    z-index: 99;
+  #timeout-message {
     display: none;
-    background: rgba(150, 150, 150, 0.5);
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 0.6rem;
+    background-color: rgba(255,255,255,0.6);
+    font-weight: 600;
   }
 
-  #canvas-overlay > h1 {
-    text-align: center;
-    color: white;
-  }
-  #canvas-overlay > h2 {
-    text-align: center;
-    color: white;
-  }
-
-  .canvas-overlay-active {
+  .active {
     display: block !important;
   }
 </style>

@@ -5,7 +5,6 @@
   import { CanvasElementController, CANVAS_UPDATE } from '../assets/pixel-wars/CanvasController';
   import { CanvasInfoStore } from '../assets/pixel-wars/stores';
   import SubscriptionController from '../assets/pixel-wars/SubscriptionController';
-  import CanvasOverlay from './CanvasOverlay.svelte';
 
   let canvasController: CanvasElementController;
   let subscriptionController: SubscriptionController;
@@ -36,7 +35,6 @@
 </script>
 <div id="canvas-container">
   <canvas id="canvas-square" style={styles} use:init />
-  <CanvasOverlay />
 </div>
 <style>
   canvas {
