@@ -1,3 +1,6 @@
+import { get } from "svelte/store";
+import { CanvasInfoStore } from "./stores";
+
 const CANVAS_SCALE = 3;
 const DEFAULT_SIZE = 252;
 
@@ -8,33 +11,10 @@ function numberClamp(num, min, max) {
   return Math.min(Math.max(num, min), max)
 }
 
-export const CANVAS_UPDATE = "canvasUpdate";
-
 export class CanvasElementController {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   pixels: CanvasPixels;
-
-  private _canvas_zoom = 5;
-  public get canvas_zoom() { return this._canvas_zoom }
-  public set canvas_zoom(value) { this._canvas_zoom = value; this.emit('canvas_zoom', value) }
-
-  private cursor_position_x = "0px";
-  private cursor_position_y = "0px";
-
-  private _canvas_view_translate_x = "0px";
-  public get canvas_view_translate_x() { return this._canvas_view_translate_x }
-  public set canvas_view_translate_x(value) { this._canvas_view_translate_x = value; this.emit('canvas_view_translate_x', value) }
-  private _canvas_view_translate_y = "0px";
-  public get canvas_view_translate_y() { return this._canvas_view_translate_y }
-  public set canvas_view_translate_y(value) { this._canvas_view_translate_y = value; this.emit('canvas_view_translate_y', value) }
-
-  private _cursor_canvas_x = 0;
-  public get cursor_canvas_x() { return this._cursor_canvas_x }
-  public set cursor_canvas_x(value) { this._cursor_canvas_x = value; this.emit('cursor_canvas_x', value) }
-  private _cursor_canvas_y = 0;
-  public get cursor_canvas_y() { return this._cursor_canvas_y }
-  public set cursor_canvas_y(value) { this._cursor_canvas_y = value; this.emit('cursor_canvas_y', value) }
 
   private canvas_can_move = false;
   private canvas_can_place = false;
@@ -83,14 +63,7 @@ export class CanvasElementController {
     });
 
     window.addEventListener("wheel", (e) => {
-      this.canvas_zoom = numberClamp(this.canvas_zoom + (e.deltaY < 0 ? 0.2 : -0.2), 0.3, 8);
-    });
-
-    window.addEventListener("mousemove", (e) => {
-      window.requestAnimationFrame(() => {
-        this.cursor_position_x = `${Math.floor(e.clientX)}px`;
-        this.cursor_position_y = `${Math.floor(e.clientY)}px`;
-      });
+      CanvasInfoStore.update((v) => ({ ...v, canvas_zoom: numberClamp(v.canvas_zoom + (e.deltaY < 0 ? 0.2 : -0.2), 0.3, 8) }));
     });
 
     this.canvas.addEventListener("mousedown", (e: MouseEvent) => {
@@ -111,16 +84,22 @@ export class CanvasElementController {
         this.canvas_can_place = (movementX <= 1 && movementX >= -1) || (movementY <= 1 && movementY >= -1);
 
       const [x, y] = this.getCursorCanvasPosition(e);
-      this.cursor_canvas_x = x;
-      this.cursor_canvas_y = y;
+      CanvasInfoStore.update(v => ({
+        ...v,
+        cursor_canvas_x: x,
+        cursor_canvas_y: y
+      }));
 
       if(this.canvas_can_move && !this.canvas_move_frame_asked) {
         this.canvas_move_frame_asked = true;
         window.requestAnimationFrame(() => {
-          const delta_x = ((movementX * 5) / this.canvas_zoom) * 0.2;
-          const delta_y = ((movementY * 5) / this.canvas_zoom) * 0.2;
-          this.canvas_view_translate_x = String(parseFloat(this.canvas_view_translate_x) + delta_x + "px");
-          this.canvas_view_translate_y = String(parseFloat(this.canvas_view_translate_y) + delta_y + "px");
+          const delta_x = ((movementX * 5) / get(CanvasInfoStore).canvas_zoom) * 0.2;
+          const delta_y = ((movementY * 5) / get(CanvasInfoStore).canvas_zoom) * 0.2;
+          CanvasInfoStore.update(v => ({
+            ...v,
+            canvas_view_translate_x: String(parseFloat(v.canvas_view_translate_x) + delta_x + "px"),
+            canvas_view_translate_y: String(parseFloat(v.canvas_view_translate_y) + delta_y + "px")
+          }));
           this.canvas_move_frame_asked = false;
         });
       }
@@ -153,7 +132,7 @@ export class CanvasElementController {
         if (mobile_pinch_length - this.mobile_pinch_length_last == 0) return;
 
         const scalediff = (mobile_pinch_length - this.mobile_pinch_length_last) * 0.01;
-        this.canvas_zoom = numberClamp(this.canvas_zoom + scalediff, 0.3, 8);
+        CanvasInfoStore.update(v => ({...v, canvas_zoom: numberClamp(v.canvas_zoom + scalediff, 0.3, 8) }));
         this.mobile_pinch_length_last = mobile_pinch_length;
       } else if (touch.touches.length == 1) {
         const movementX = touch.touches[0].clientX - this.mobile_pan_position_last[0];
@@ -167,10 +146,13 @@ export class CanvasElementController {
         if(this.canvas_can_move && !this.canvas_move_frame_asked) {
           this.canvas_move_frame_asked = true;
           window.requestAnimationFrame(() => {
-            const delta_x = ((movementX * 5) / this.canvas_zoom) * 0.2;
-            const delta_y = ((movementY * 5) / this.canvas_zoom) * 0.2;
-            this.canvas_view_translate_x = String(parseFloat(this.canvas_view_translate_x) + delta_x + "px");
-            this.canvas_view_translate_y = String(parseFloat(this.canvas_view_translate_y) + delta_y + "px");
+            const delta_x = ((movementX * 5) / get(CanvasInfoStore).canvas_zoom) * 0.2;
+            const delta_y = ((movementY * 5) / get(CanvasInfoStore).canvas_zoom) * 0.2;
+            CanvasInfoStore.update(v => ({
+              ...v,
+              canvas_view_translate_x: String(parseFloat(v.canvas_view_translate_x) + delta_x + "px"),
+              canvas_view_translate_y: String(parseFloat(v.canvas_view_translate_y) + delta_y + "px")
+            }));
             this.canvas_move_frame_asked = false;
           });
         }
@@ -191,27 +173,20 @@ export class CanvasElementController {
 
   private getCursorCanvasPosition(event: MouseEvent): [number, number] {
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.max(Math.ceil((event.clientX - rect.left) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
-    const y = Math.max(Math.ceil((event.clientY - rect.top) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    const x = Math.max(Math.ceil((event.clientX - rect.left) / CANVAS_SCALE / get(CanvasInfoStore).canvas_zoom) - 1, 0);
+    const y = Math.max(Math.ceil((event.clientY - rect.top) / CANVAS_SCALE / get(CanvasInfoStore).canvas_zoom) - 1, 0);
     return [ x, y ];
   }
 
   private getCursorCanvasPositionMobile(event: TouchEvent): [number, number] {
     const rect = this.canvas.getBoundingClientRect();
-    const x = Math.max(Math.ceil((event.changedTouches[0].clientX - rect.left) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
-    const y = Math.max(Math.ceil((event.changedTouches[0].clientY - rect.top) / CANVAS_SCALE / this.canvas_zoom) - 1, 0);
+    const x = Math.max(Math.ceil((event.changedTouches[0].clientX - rect.left) / CANVAS_SCALE / get(CanvasInfoStore).canvas_zoom) - 1, 0);
+    const y = Math.max(Math.ceil((event.changedTouches[0].clientY - rect.top) / CANVAS_SCALE / get(CanvasInfoStore).canvas_zoom) - 1, 0);
     return [ x, y ];
   }
 
   private placePixel(x: number, y: number) {
     window.dispatchEvent(new CustomEvent("pixelClicked", { detail: { x, y } }));
-  }
-
-  private emit(field: string, value: unknown) {
-    window.dispatchEvent(new CustomEvent(CANVAS_UPDATE, { detail: {
-      field,
-      value
-    }}));
   }
 
   putCanvasPixels(canvasPixels: CanvasPixels) {

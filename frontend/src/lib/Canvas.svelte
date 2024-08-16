@@ -2,7 +2,7 @@
   import { get } from 'svelte/store';
 
   import { initialLoad } from '../assets/pixel-wars/canvas';
-  import { CanvasElementController, CANVAS_UPDATE } from '../assets/pixel-wars/CanvasController';
+  import CanvasElementController from '../assets/pixel-wars/CanvasController';
   import { CanvasInfoStore } from '../assets/pixel-wars/stores';
   import SubscriptionController from '../assets/pixel-wars/SubscriptionController';
 
@@ -17,16 +17,6 @@
     (async () => {
       // @ts-ignore
       window.eventdate = Date.now();
-
-      window.addEventListener(CANVAS_UPDATE, (e: CustomEvent) => {
-        const dyn = get(CanvasInfoStore);
-        let {field, value}: {
-          field: string,
-          value: unknown
-        } = e.detail;
-        dyn[field] = value;
-        CanvasInfoStore.set(dyn)
-      });
 
       canvasController = new CanvasElementController(canvasElement);
       subscriptionController = new SubscriptionController(canvasController);
