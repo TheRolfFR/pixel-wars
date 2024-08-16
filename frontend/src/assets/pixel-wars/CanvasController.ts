@@ -207,6 +207,10 @@ export class CanvasElementController {
     if (this.canvas_update_frame_asked) window.requestAnimationFrame(() => this.updateCanvas())
   }
 
+  getPixelCanvas(x: number, y: number): Color {
+    return this.pixels.colors[x + (this.pixels.width * y)];
+  }
+
   updateCanvas() {
     if(this.pixels === undefined) return;
 

@@ -1,5 +1,5 @@
 import type CanvasElementController from './CanvasController';
-import { decodeColor } from './canvas';
+import { decodeColor, encodeColor } from './canvas';
 import { ColorPickerStore, OnlineCountStore, TimeoutStore } from './stores';
 import { get } from 'svelte/store';
 
@@ -24,11 +24,16 @@ export default class SubscriptionController {
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };
+
+      // do not place if same pixel color
+      const color = get(ColorPickerStore);
+      const { x, y } = coords;
+      if(encodeColor(this.canvasController.getPixelCanvas(x, y)) === color) return;
+
       const timeout = get(TimeoutStore);
       if (timeout.remainingPixels == 0) return 0;
       timeout.remainingPixels--;
       TimeoutStore.set(timeout);
-      const color = get(ColorPickerStore);
       await this.sendUpdate(coords.x, coords.y, color);
       this.canvasController.putPixelCanvas(coords.x, coords.y, decodeColor(color));
     })

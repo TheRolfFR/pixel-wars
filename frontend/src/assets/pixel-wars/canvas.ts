@@ -20,8 +20,9 @@ export const ColorPallete: Color[] = [
   [0xff, 0xff, 0xff, 0xff]
 ];
 
-export function encodeColor([r, g, b, a]: Color): number {
-  return ColorPallete.indexOf([r, g, b, a]);
+export function encodeColor(input: Color): number {
+  const input_str = input.toString();
+  return ColorPallete.findIndex(c => c.toString() === input_str);
 }
 
 export function decodeColor(color: number): Color {
