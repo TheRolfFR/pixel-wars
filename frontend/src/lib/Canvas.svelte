@@ -9,22 +9,25 @@
   let canvasController: CanvasElementController;
   let subscriptionController: SubscriptionController;
 
-  window.addEventListener(CANVAS_UPDATE, (e: CustomEvent) => {
-    const dyn = get(CanvasInfoStore);
-    let {field, value}: {
-      field: string,
-      value: unknown
-    } = e.detail;
-    dyn[field] = value;
-    CanvasInfoStore.set(dyn)
-  });
-
   $: styles = Object.entries({
     transform: `scale(${$CanvasInfoStore.canvas_zoom}) translate(${$CanvasInfoStore.canvas_view_translate_x }, ${$CanvasInfoStore.canvas_view_translate_y })`
   }).map(([key, value]) => `${key}: ${value}`).join("; ");
 
   const init = (canvasElement: HTMLCanvasElement) => {
     (async () => {
+      // @ts-ignore
+      window.eventdate = Date.now();
+
+      window.addEventListener(CANVAS_UPDATE, (e: CustomEvent) => {
+        const dyn = get(CanvasInfoStore);
+        let {field, value}: {
+          field: string,
+          value: unknown
+        } = e.detail;
+        dyn[field] = value;
+        CanvasInfoStore.set(dyn)
+      });
+
       canvasController = new CanvasElementController(canvasElement);
       subscriptionController = new SubscriptionController(canvasController);
 

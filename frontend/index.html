@@ -5,6 +5,19 @@
     <link rel="icon" type="image/png" href="/favicons/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>rs/place by TheRolf</title>
+    <script>
+      // @ts-ignore
+      Window.prototype._addEventListener = Window.prototype.addEventListener;
+      Window.prototype.addEventListener = function(event, func, passive) {
+        const eventdate = window.eventdate;
+        if (passive==undefined) passive=false;
+        this._addEventListener(event,(...args) => {
+          if(window.eventdate === eventdate) {
+            func(...args)
+          }
+        },passive);
+      };
+    </script>
   </head>
   <body>
     <div id="app"></div>
