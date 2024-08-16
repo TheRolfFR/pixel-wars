@@ -78,7 +78,6 @@ impl Handler<ConnectMessage> for PlaceServer {
 
         let count = self.sessions.len();
         let message_count = OnlineUserCountMessage(count);
-        dbg!(&message_count);
         self.send_online(message_count);
 
         count
@@ -101,7 +100,6 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
     type Result = Result<(), String>;
 
     fn handle(&mut self, msg: model::UserPixelColorMessage, _ctx: &mut Self::Context) -> Self::Result {
-        dbg!("Received new pixel color message:", &msg);
         log::info!("Received new pixel color message: {:?}", &msg);
 
         let mut con = self.redis_client.get_connection()
@@ -131,7 +129,6 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
             client.remaining_pixels = config.pixels_per_minute;
             client.last_timestamp = current_timestamp.as_secs_f64();
         }
-        dbg!(&client);
         if client.remaining_pixels == 0 {
             return Err("No pixels left".to_string());
         }

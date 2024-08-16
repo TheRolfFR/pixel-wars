@@ -8,9 +8,7 @@ use actix::*;
 use actix_web::{web, App, HttpServer};
 
 const REDIS_CONNECTION_STRING: &str = "redis://172.18.115.69/";
-const DEBUG_WEB_IP: &str = "127.0.0.1";
 const DEBUG_WEB_PORT: u16 = 8080;
-const PROD_WEB_IP: &str = "0.0.0.0";
 const PROD_WEB_PORT: u16 = 80;
 
 #[actix_web::main]
@@ -40,9 +38,9 @@ async fn main() -> std::io::Result<()> {
 
     // http server config
     let (ip, port) = if config.debug_mode {
-        (DEBUG_WEB_IP, DEBUG_WEB_PORT)
+        (config.host.clone(), DEBUG_WEB_PORT)
     } else {
-        (PROD_WEB_IP, PROD_WEB_PORT)
+        (config.host.clone(), PROD_WEB_PORT)
     };
     log::info!("starting HTTP server at http://{}:{}", ip, port);
     HttpServer::new(move || {

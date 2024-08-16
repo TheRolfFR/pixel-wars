@@ -68,7 +68,6 @@ impl ResponseError for BackendError {
 
 impl From<RedisError> for BackendError {
     fn from(val: RedisError) -> Self {
-        dbg!(&val);
         log::error!("RedisError: {:?}", val);
         BackendError {
             error: "Error retrieving canvas from redis",
@@ -78,7 +77,6 @@ impl From<RedisError> for BackendError {
 }
 impl From<serde_json::Error> for BackendError {
     fn from(val: serde_json::Error) -> Self {
-        dbg!(&val);
         log::error!("serde_json::Error: {:?}", val);
         BackendError {
             error: "Error with serialize/deserialize from serde_json",

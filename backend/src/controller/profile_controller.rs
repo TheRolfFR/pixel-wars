@@ -39,7 +39,6 @@ pub async fn client_timeout(
     let last_timestamp = Duration::seconds_f64(client.last_timestamp);
     let duration = current_timestamp - last_timestamp;
 
-    dbg!(&current_timestamp, &last_timestamp, duration.abs());
     if duration.abs() > Duration::MINUTE {
         client.remaining_pixels = config.pixels_per_minute;
         client.last_timestamp = current_timestamp.as_secs_f64();
