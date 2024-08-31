@@ -124,6 +124,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for PlaceSession {
             Ok(ws::Message::Binary(bin)) => {
                 self.place_pixel(&bin[..], ctx).ok();
             },
+            Ok(ws::Message::Close(reason)) => {
+                dbg!(&reason);
+                ctx.close(reason)
+            }
             _ => (),
         }
     }
