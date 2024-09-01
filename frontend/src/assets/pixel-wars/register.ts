@@ -13,7 +13,7 @@ export async function handleSubmit(e){
     console.log(json);
     
     try {
-        await fetch("http://"+window.location.host+'/api/profiles/new', {method: 'POST', body: JSON.stringify(json)});
+        await fetch(window.location.protocol+"//"+window.location.host+'/api/profiles/new', {method: 'POST', body: JSON.stringify(json)});
     } catch (err) {
         console.log(err);
     }
