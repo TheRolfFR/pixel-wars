@@ -37,6 +37,8 @@ pub struct Config {
     pub colors_active: Option<Vec<usize>>,
 }
 
+pub type ChunkLocation = ((usize, usize), (usize, usize));
+
 impl Config {
     pub fn from_file<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error>> {
         // Open file in RO mode with buffer
@@ -47,6 +49,18 @@ impl Config {
         let result: Config = serde_json::from_reader(reader)?;
 
         Ok(result)
+    }
+    fn chunk_number(&self, size: u16) -> usize {
+        (size / self.canvas_chunk_size + if size % self.canvas_chunk_size != 0 { 1 } else { 0 }).into()
+    }
+    pub fn canvas_chunks(&self) -> (usize, usize) {
+        (self.chunk_number(self.canvas_width), self.chunk_number(self.canvas_height))
+    }
+    pub fn canvas_pos_to_chunk_location(&self, pos_x: u16, pos_y: u16) -> ChunkLocation {
+        let chunk_index = ((pos_x / self.canvas_chunk_size) as usize, (pos_y / self.canvas_chunk_size) as usize);
+        let chunk_pos = ((pos_x % self.canvas_chunk_size) as usize, (pos_y % self.canvas_chunk_size) as usize);
+
+        (chunk_index, chunk_pos)
     }
 }
 
@@ -143,12 +157,14 @@ impl Client {
     }
 }
 
+pub type PixelColorUpdateMessageColor = u8;
+
 #[derive(Debug, Serialize, Deserialize, Clone, Message)]
 #[rtype(result = "()")]
 pub struct PixelColorUpdateMessage {
     pub pos_x: u16,
     pub pos_y: u16,
-    pub color: u8
+    pub color: PixelColorUpdateMessageColor
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Message)]
@@ -159,4 +175,5 @@ pub struct UserPixelColorMessage {
 }
 
 pub const SESSION_COOKIE_NAME: &str = "sessionUUID";
+
 pub const CANVAS_DB_KEY: &str = "canvas";
