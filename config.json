@@ -1,8 +1,32 @@
 {
-    "redisUrl": "redis://172.27.243.76/",
-    "canvasWidth":252,
-    "canvasHeight":252,
-    "pixelsPerMinute":9,
-    "debugMode":true,
-    "host": "192.168.1.84"
+    "redisUrl": "redis://172.18.115.69/",
+    "host": "192.168.1.14",
+    "debugMode": true,
+
+    "canvasWidth": 256,
+    "canvasHeight": 256,
+    "canvasChunkSize": 256,
+
+    "pixelsPerMinute": 9,
+    "pixelsPerBytes": 2,
+
+    "colors": [
+        [  0,   0,   0],
+        [  0,  85,   0],
+        [  0, 171,   0],
+        [  0, 255,   0],
+        [  0,   0, 255],
+        [  0,  85, 255],
+        [  0, 171, 255],
+        [  0, 255, 255],
+        [255,   0,   0],
+        [255,  85,   0],
+        [255, 171,   0],
+        [255, 255,   0],
+        [255,   0, 255],
+        [255,  85, 255],
+        [255, 171, 255],
+        [255, 255, 255]
+    ],
+    "colorsActive": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 }
