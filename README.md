@@ -35,6 +35,7 @@ pnpm i -g concurrently
 Now you can launch dev command:
 
 ```sh
+cd frontend
 pnpm dev
 ```
 
@@ -65,37 +66,15 @@ Backend is started with reverse proxy for frontend at [http://localhost:8080/](h
 
 ## How to build
 
-To build, you can just build the docker image:
+Clone this repo duh. Build the docker image:
 
 ```sh
 podman build -t rs-place:dev .
 ```
 
-You can then create a docker compose file to launch your image just built and a redis server:
+Modify the provided [docker-compose.yml](./docker-compose.yml) file to your liking. Don't forget to configure your [config.json](./config_prod.json) file with production values. ``debugMode`` must be false to start with static files from frontend build. Config properties ``redisUrl`` and ``host`` can be both overwritten by respectively the ``REDIS_URL`` and ``HOST`` environment variables.
 
-```yaml
-services:
-  redis:
-    image: 'docker.io/redis:7-alpine'
-    restart: always
-    ports:
-      - '6379:6379'
-    command: redis-server /redis.conf
-    volumes:
-      - './redis/redis.conf:/redis.conf'
-      - './redis/data:/data'
-    # So that you can use in config_prod.json redis://rsplace_redis/
-    hostname: rsplace_redis
-    container_name: rsplace_redis
-  place:
-    image: 'rs-place:dev'
-    restart: always
-    ports:
-      - '80:80'
-    volumes:
-      - './config_prod.json:/config.json'
-    container_name: rsplace_server
-```
+You can then start the containers:
 
 ```sh
 podman compose up -d
@@ -108,7 +87,3 @@ podman machine stop
 podman machine set --rootful
 podman machine start
 ```
-
-Don't forget to configure your [config.json](./config_prod.json) file with production values. ``debugMode`` must be false to start with static files from frontend build.
-
-Config properties ``redisUrl`` and ``host`` can be both overwritten by respectively the ``REDIS_URL`` and ``HOST`` environment variables.
