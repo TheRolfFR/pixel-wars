@@ -1,21 +1,17 @@
 <div align="center">
-    <h1><br />
-        <img src="frontend/src/assets/logo-text.png" height="60" alt="rs/place">
-    <br /><br /></h1>
-
-<em>A blazing fast r/place clone with Rust, Actix web, redis and Svelte</em>
+    <h1><img src="frontend/src/assets/logo-text.png" height="60" alt="rs/place"></h1>
+    <em>A blazing fast r/place clone with Rust, Actix web, redis and Svelte</em>
 </div>
 
 ## Requirements
 
 These are not the required versions but what I used, your versions could be more recent.
 
-- Cargo 1.80.0+
-- rustc 1.80.1+
-- NodeJS 20.15.1+
-- pnpm 9.9.0+
-- concurrently 8.2.2+
-- redis 7.4.0
+- [Cargo](https://doc.rust-lang.org/cargo/) 1.80.0+
+- [rustc](https://www.rust-lang.org/) 1.80.1+
+- [NodeJS](https://nodejs.org/) 20.15.1+
+- [pnpm](https://pnpm.io/) 9.9.0+
+- [redis](https://redis.io/) 7.4.0+
 
 ## How to develop
 
