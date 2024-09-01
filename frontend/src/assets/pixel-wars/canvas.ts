@@ -16,7 +16,7 @@ export function decodeColor(color: number): Color {
 export async function initialLoad(canvasController: CanvasElementController) {
   let canvasResponse: Response;
   try {
-    canvasResponse = await fetch("http://"+window.location.host+'/pixelwars/api/canvas');
+    canvasResponse = await fetch("http://"+window.location.host+'/api/canvas');
   } catch (err) {
     console.log(err);
   }

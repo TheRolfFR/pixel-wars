@@ -13,13 +13,13 @@ export default class SubscriptionController {
 
 
   public async initConnection() {
-    const cookies = await fetch("http://"+window.location.host+'/pixelwars/api/getSession');
+    const cookies = await fetch("http://"+window.location.host+'/api/getSession');
     if (!(cookies.status == 401 || cookies.status == 200)) {
       //TODO: show that something went wrong while trying to use session
       return;
     }
     window.dispatchEvent(new CustomEvent<{ done: boolean }>("sessionLoaded", { detail: { done: true } }));
-    this.websocketServer = new WebSocket('ws://' + window.location.host + '/pixelwars/api/subscribe');
+    this.websocketServer = new WebSocket('ws://' + window.location.host + '/api/subscribe');
     this.websocketServer.addEventListener("message", this.receiveMessageHandler());
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
