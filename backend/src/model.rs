@@ -10,15 +10,31 @@ use std::path::Path;
 use std::sync::Mutex;
 
 
+const CANVAS_SIZE_DEFAULT: u16 = 256;
+fn canvas_size_default() -> u16 { CANVAS_SIZE_DEFAULT }
+const PIXELS_PER_BYTES_DEFAULT: usize = 2;
+fn pixels_per_bytes_default() -> usize { PIXELS_PER_BYTES_DEFAULT }
+
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
     pub redis_url: Option<String>,
-    pub canvas_width: u16,
-    pub canvas_height: u16,
-    pub pixels_per_minute: usize,
+    pub host: String,
     pub debug_mode: bool,
-    pub host: String
+
+    #[serde(default = "canvas_size_default")]
+    pub canvas_width: u16,
+    #[serde(default = "canvas_size_default")]
+    pub canvas_height: u16,
+    #[serde(default = "canvas_size_default")]
+    pub canvas_chunk_size: u16,
+
+    pub pixels_per_minute: usize,
+    #[serde(default = "pixels_per_bytes_default")]
+    pub pixels_per_bytes: usize,
+
+    pub colors: Vec<[u8; 3]>,
+    pub colors_active: Option<Vec<usize>>,
 }
 
 impl Config {

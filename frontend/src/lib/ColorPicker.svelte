@@ -1,6 +1,5 @@
 <script lang="ts">
-    import { ColorPallete } from "../assets/pixel-wars/canvas";
-    import { ColorPickerStore } from "../assets/pixel-wars/stores";
+    import { ColorPickerStore, CanvasPaletteStore } from "../assets/pixel-wars/stores";
     import { TimeoutStore } from '../assets/pixel-wars/stores';
     import TimeoutCounter from "./TimeoutCounter.svelte";
 
@@ -14,7 +13,7 @@
     <div id="color-picker" class="card">
         <div id="palette-grid-scroller">
             <div id="palette-grid">
-                {#each ColorPallete as color, i}
+                {#each $CanvasPaletteStore as color, i}
                     <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
                         on:click="{changeColor(i)}"
                         class:color-block-active="{i === $ColorPickerStore}">

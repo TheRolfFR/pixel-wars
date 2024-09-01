@@ -1,32 +1,16 @@
 import type CanvasElementController from './CanvasController';
 import type { CanvasPixels, Color } from './CanvasController';
+import { CanvasPaletteStore } from './stores';
 
-export const ColorPallete: Color[] = [
-  [0x00, 0x00, 0x00, 0xff],
-  [0x00, 0x55, 0x00, 0xff],
-  [0x00, 0xab, 0x00, 0xff],
-  [0x00, 0xff, 0x00, 0xff],
-  [0x00, 0x00, 0xff, 0xff],
-  [0x00, 0x55, 0xff, 0xff],
-  [0x00, 0xab, 0xff, 0xff],
-  [0x00, 0xff, 0xff, 0xff],
-  [0xff, 0x00, 0x00, 0xff],
-  [0xff, 0x55, 0x00, 0xff],
-  [0xff, 0xab, 0x00, 0xff],
-  [0xff, 0xff, 0x00, 0xff],
-  [0xff, 0x00, 0xff, 0xff],
-  [0xff, 0x55, 0xff, 0xff],
-  [0xff, 0xab, 0xff, 0xff],
-  [0xff, 0xff, 0xff, 0xff]
-];
+let ColorPaletteLocal: Color[] = [];
 
 export function encodeColor(input: Color): number {
   const input_str = input.toString();
-  return ColorPallete.findIndex(c => c.toString() === input_str);
+  return ColorPaletteLocal.findIndex(c => c.toString() === input_str);
 }
 
 export function decodeColor(color: number): Color {
-  return ColorPallete[color];
+  return ColorPaletteLocal[color];
 }
 
 export async function initialLoad(canvasController: CanvasElementController) {
@@ -36,13 +20,20 @@ export async function initialLoad(canvasController: CanvasElementController) {
   } catch (err) {
     console.log(err);
   }
+
   const canvasJSON = await canvasResponse.json();
   const canvasString = atob(canvasJSON['canvas']);
   const bytes = new Uint8Array(canvasString.length);
-  for(var i = 0; i < canvasString.length; i++){
+  for(let i = 0; i < canvasString.length; i++){
     bytes[i] = canvasString.charCodeAt(i)
   }
   const canvasSize = canvasJSON['size'] as { width: number; height: number };
+
+  ColorPaletteLocal = canvasJSON['colors'].map(e => [...e, 255]);
+  CanvasPaletteStore.set(ColorPaletteLocal);
+  CanvasPaletteStore.subscribe(palette => {
+    ColorPaletteLocal = palette;
+  });
 
   const imageData = canvasStringToColorList(bytes, canvasSize);
   canvasController.putCanvasPixels(imageData);
@@ -61,7 +52,7 @@ function canvasStringToColorList(
   const colors: Color[] = [];
   for (let i = 0; i < canvasPixels.length; i++) {
     if(canvasPixels[i] > 15) console.log(canvasPixels[i]);
-    let color: Color = decodeColor(canvasPixels[i]);
+    const color: Color = decodeColor(canvasPixels[i]);
     colors.push(color);
   }
 

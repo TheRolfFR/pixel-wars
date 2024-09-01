@@ -15,7 +15,8 @@ struct CanvasInfoSize {
 #[derive(Debug, Serialize)]
 struct CanvasInfoResponse {
     canvas: String,
-    size: CanvasInfoSize
+    size: CanvasInfoSize,
+    colors: Vec<[u8; 3]>
 }
 
 async fn canvas_redis_get(
@@ -70,12 +71,25 @@ pub async fn canvas_get(
 
     let encoded_canvas = BASE64_STANDARD.encode(&canvas.colors);
 
+    let active_colors =  if let Some(colors_active) = &config.colors_active {
+        let mut filtered_ordered_colors = Vec::with_capacity(colors_active.len());
+        for color_index in colors_active {
+            if let Some(color) = config.colors.get(*color_index) {
+                filtered_ordered_colors.push(*color);
+            }
+        }
+        filtered_ordered_colors
+    } else {
+        config.colors.clone()
+    };
+
     Ok(HttpResponse::Ok().json(CanvasInfoResponse {
         canvas: encoded_canvas,
         size: CanvasInfoSize {
             width: config.canvas_width,
             height: config.canvas_height
-        }
+        },
+        colors: active_colors
     }))
 }
 

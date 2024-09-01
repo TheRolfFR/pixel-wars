@@ -19,4 +19,6 @@ export const CanvasInfoStore = writable({
     width: 0,
 })
 
+export const CanvasPaletteStore = writable([])
+
 export const OnlineCountStore = writable(0);
