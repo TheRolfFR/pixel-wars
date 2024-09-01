@@ -1,13 +1,15 @@
 use std::sync::Mutex;
+use std::path::Path;
+use std::env;
 
 use backend::{websocket, debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
 use actix_cors::Cors;
 
 use redis;
 use actix::*;
+use actix_files as fs;
 use actix_web::{web, App, HttpServer};
 
-const REDIS_CONNECTION_STRING: &str = "redis://172.18.115.69/";
 const DEBUG_WEB_PORT: u16 = 8080;
 const PROD_WEB_PORT: u16 = 80;
 
@@ -18,13 +20,28 @@ async fn main() -> std::io::Result<()> {
 
     // TODO: extract args better
     let mut args = std::env::args();
-    let config_path = args.nth(1).unwrap_or("..\\config.json".into());
+    let config_path_string = args.nth(1).unwrap_or("../config.json".into());
+
+    let config_path = Path::new(&config_path_string);
+    let absolute_path = std::path::absolute(config_path)
+        .map_err(|e| format!("Failed to create absolute path : {e}")).unwrap();
 
     // canvas config
-    let config = model::Config::from_file(config_path).unwrap();
+    log::info!("Opening config file located at {}...", absolute_path.display());
+    let config = {
+        let mut config = model::Config::from_file(absolute_path).expect("config.json file not found");
+        // overwrite with env
+        if let Ok(env_var) = env::var("REDIS_URL") {
+            config.redis_url = env_var;
+        }
+        if let Ok(env_var) = env::var("HOST") {
+            config.host = env_var;
+        }
+        config
+    };
 
     // real-time db config
-    let redis_url = config.redis_url.clone().unwrap_or(REDIS_CONNECTION_STRING.into());
+    let redis_url = config.redis_url.clone();
     log::info!("Starting redis on {}", &redis_url);
     let redis_client = redis::Client::open(redis_url).unwrap();
 
@@ -62,6 +79,11 @@ async fn main() -> std::io::Result<()> {
 
         if config.debug_mode {
             app = app.configure(add_reverse_proxy);
+        } else {
+            app = app
+            .service(fs::Files::new("/favicons", "../frontend/public/favicons"))
+            .service(fs::Files::new("/assets", "../frontend/dist/assets"))
+            .service(fs::Files::new("/", "../frontend/dist/").index_file("index.html"));
         }
 
         app

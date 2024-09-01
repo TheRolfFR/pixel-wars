@@ -1,6 +1,8 @@
-redis/
-backend/__debug_bin
-backend/certs/
+.vscode/
+
+backend/target/
+
 frontend/dist/
 frontend/node_modules/
-frontend/.vscode/
+
+redis/

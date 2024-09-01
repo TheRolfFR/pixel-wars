@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "watch-frontend": "vite",
+    "watch-backend": "cd ../backend && cargo watch -x run",
+    "dev": "concurrently --kill-others npm:watch-*",
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json",

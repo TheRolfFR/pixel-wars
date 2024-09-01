@@ -1,7 +1,6 @@
-version: '3'
 services:
   redis:
-    image: 'docker.io/redis:7.0.9-alpine'
+    image: 'docker.io/redis:7-alpine'
     restart: always
     ports:
       - '6379:6379'
@@ -9,11 +8,17 @@ services:
     volumes:
       - './redis/redis.conf:/redis.conf'
       - './redis/data:/data'
-    networks:
-      - redisNet
-    container_name: pixelWarsRedis
-networks:
-  redisNet:
-    driver: bridge
-    name: redis_network
-    
+    # To match in config_prod.json or rsplace_sever env with redis://rsplace_redis/
+    hostname: rsplace_redis
+    container_name: rsplace_redis
+  place:
+    image: 'rs-place:dev'
+    restart: always
+    ports:
+      - '80:80'
+    volumes:
+      - './config_prod.json:/config.json'
+    environment:
+      - REDIS_URL=redis://rsplace_redis/
+      - HOST=0.0.0.0
+    container_name: rsplace_server

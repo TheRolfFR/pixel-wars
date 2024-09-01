@@ -18,8 +18,9 @@ fn pixels_per_bytes_default() -> usize { PIXELS_PER_BYTES_DEFAULT }
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Config {
-    pub redis_url: Option<String>,
+    pub redis_url: String,
     pub host: String,
+    #[serde(default)]
     pub debug_mode: bool,
 
     #[serde(default = "canvas_size_default")]
