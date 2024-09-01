@@ -2,8 +2,11 @@
   import { TimeoutStore } from '../assets/pixel-wars/stores';
 
   let diffTime: number = 0;
+  let sessionLoaded: boolean = false;
 
   TimeoutStore.subscribe(async (timeout) => {
+    if (!sessionLoaded) return;
+
     console.log(timeout);
     if (timeout.remainingPixels == 0) {
       let query = await fetchLastTimeout();
@@ -35,6 +38,8 @@
   $: secondsLeft = Math.round(diffTime / 1000);
 
   async function fetchLastTimeout(): Promise<{ timeout: number; remainingPixels: number }> {
+    sessionLoaded = true;
+
     const query = await fetch(window.location.protocol+"//"+window.location.host+'/api/client/details');
     if (query.status != 200) {
       return {timeout: -1, remainingPixels: -1};
