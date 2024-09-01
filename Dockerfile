@@ -1,7 +1,7 @@
 ####################
 #    BUILD RUST    #
 ####################
-FROM rust:1.80 AS backend_build
+FROM clux/muslrust:1.80.1-stable AS backend_build
 
 # create a new empty shell project
 RUN USER=root cargo new --bin backend
@@ -11,15 +11,9 @@ WORKDIR /backend
 COPY ./backend/Cargo.lock ./Cargo.lock
 COPY ./backend/Cargo.toml ./Cargo.toml
 
-# this build step will cache your dependencies
-RUN cargo build --release
-RUN rm src/*.rs
-
-# copy your source tree
+# Copy and build
 COPY ./backend/src ./src
-RUN rm ./target/release/deps/backend*
 RUN cargo build --release
-
 
 ######################
 #    BUILD SVELTE    #
@@ -43,7 +37,7 @@ RUN pnpm run build
 #####################
 #    FINAL IMAGE    #
 #####################
-FROM rust:1.80
+FROM alpine:latest
 
 # copy frontend
 WORKDIR /frontend
@@ -53,9 +47,9 @@ COPY ./frontend/public/favicons ./public/favicons
 # copy backend
 RUN mkdir -p /backend
 WORKDIR /backend
-COPY --from=backend_build /backend/target/release/backend /usr/bin/backend
+COPY --from=backend_build /backend/target/*/release/backend ./
 
 EXPOSE 80
 
 # set the startup command to run your binary
-CMD ["/usr/bin/backend"]
+CMD ["./backend"]
