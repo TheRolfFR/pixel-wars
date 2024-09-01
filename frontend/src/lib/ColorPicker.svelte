@@ -11,23 +11,28 @@
 </script>
 <div id="color-picker-placement">
     <div id="color-picker" class="card">
-        <div id="palette-grid-scroller">
-            <div id="palette-grid">
-                {#each $CanvasPaletteStore as color, i}
-                    <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
-                        on:click="{changeColor(i)}"
-                        class:color-block-active="{i === $ColorPickerStore}">
-                    </button>
-                {/each}
+        <div id="color-picker-part">
+            <div id="palette-grid-scroller">
+                <div id="palette-grid">
+                    {#each $CanvasPaletteStore as color, i}
+                        <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
+                            on:click="{changeColor(i)}"
+                            class:color-block-active="{i === $ColorPickerStore}">
+                        </button>
+                    {/each}
+                </div>
             </div>
+            <div class="pixels-left desktop">
+                <b>{ $TimeoutStore.remainingPixels }</b>
+            </div>
+            <div class="pixels-left mobile">
+                { $TimeoutStore.remainingPixels } pixels left
+            </div>
+            <TimeoutCounter />
         </div>
-        <div class="pixels-left desktop">
-            <b>{ $TimeoutStore.remainingPixels }</b>
+        <div id="promo">
+            You can star ⭐ this project on <a href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer">GitHub</a>
         </div>
-        <div class="pixels-left mobile">
-            { $TimeoutStore.remainingPixels } pixels left
-        </div>
-        <TimeoutCounter />
     </div>
 </div>
 <style lang="scss">
@@ -46,12 +51,20 @@
         left: 50%;
         bottom: 0;
         transform: translateX(-50%);
-        padding: 0.7rem;
         margin: 0 auto;
+        padding: 0;
+    }
+
+    #color-picker-part {
         display: flex;
         align-items: center;
         max-width: 100%;
         gap: $gap_size*2;
+        padding: 0.7rem 0.7rem 0.4rem;
+    }
+
+    #promo {
+        margin-bottom: 0.4rem;
     }
 
     #palette-grid {
