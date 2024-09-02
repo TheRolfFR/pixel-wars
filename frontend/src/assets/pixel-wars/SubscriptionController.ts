@@ -22,6 +22,21 @@ export default class SubscriptionController {
     const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
     this.websocketServer = new WebSocket(protocol + window.location.host + '/api/subscribe');
     this.websocketServer.addEventListener("message", this.receiveMessageHandler());
+    this.websocketServer.addEventListener("error", (event) => {
+      console.error("WebSocket error: ", event);
+    })
+    this.websocketServer.addEventListener("close", (event) => {
+      const code = event.code;
+      if(code === 1000) {
+        console.log(`WebSocket closed with error code ${code}: Normal Closure`)
+      }
+      if(code === 1001) {
+        console.log(`WebSocket closed with error code ${code}: Going away`)
+      } else {
+        console.error(`WebSocket closed with error code ${code}`, event);
+        console.error("Websocket closed with following reason: ", event.reason);
+      }
+    })
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };
@@ -72,7 +87,7 @@ export default class SubscriptionController {
     return async (message: MessageEvent<Blob|string>) => {
       if(typeof(message.data) === 'string')
       {
-        const [command, args] = message.data.split(' ');
+        const [command, ...args] = message.data.split(' ');
         if(command === '/count')
         {
           const count = Number.parseInt(args[0], 10);

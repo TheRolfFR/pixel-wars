@@ -12,6 +12,7 @@ pub struct PlaceSession {
     pub uuid: String,
     /// Place server
     pub place_server: Addr<PlaceServer>,
+    pub close_reason: Option<ws::CloseReason>,
 }
 
 impl Actor for PlaceSession {
@@ -37,11 +38,22 @@ impl Actor for PlaceSession {
     }
 
     fn stopping(&mut self, _: &mut Self::Context) -> Running {
-        log::info!("User #{} disconnecting", self.uuid);
         self.place_server.do_send(DisconnectMessage {
             author_uuid: self.uuid.clone()
         });
         Running::Stop
+    }
+
+    fn stopped(&mut self, _: &mut Self::Context) {
+        match &self.close_reason {
+            Some(reason) if reason.code != ws::CloseCode::Normal && reason.code != ws::CloseCode::Away => {
+                log::error!("User #{} disconnected with reason: {}={:?}", self.uuid, u16::from(reason.code), reason);
+            },
+            None => {
+                log::error!("User #{} disconnected without reason", self.uuid);
+            }
+            _ => {}
+        };
     }
 }
 
@@ -125,7 +137,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for PlaceSession {
                 self.place_pixel(&bin[..], ctx).ok();
             },
             Ok(ws::Message::Close(reason)) => {
-                dbg!(&reason);
+                self.close_reason = reason.clone();
                 ctx.close(reason)
             }
             _ => (),

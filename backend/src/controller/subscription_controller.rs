@@ -27,6 +27,7 @@ pub async fn subscription_get(
     log::info!("Starting PlaceSession for #{}", uuid);
     ws::start(PlaceSession {
         uuid: uuid,
-        place_server: server.get_ref().clone()
+        place_server: server.get_ref().clone(),
+        close_reason: None,
     }, &req, stream)
 }

@@ -100,7 +100,7 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
     type Result = Result<(), String>;
 
     fn handle(&mut self, msg: model::UserPixelColorMessage, _ctx: &mut Self::Context) -> Self::Result {
-        log::info!("Received new pixel color message: {:?}", &msg);
+        // log::info!("Received new pixel color message: {:?}", &msg);
 
         let mut con = self.redis_client.get_connection()
             .map_err(|e| e.to_string())?;
