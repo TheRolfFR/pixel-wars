@@ -29,18 +29,20 @@ export class CanvasElementController {
   constructor(canvas: HTMLCanvasElement, map_size = DEFAULT_SIZE) {
     this.canvas = canvas;
     this.setSize(map_size);
-    this.ctx = this.canvas.getContext('2d');
-    this.ctx.imageSmoothingEnabled = false;
-    this.ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
 
     this.updateCanvas();
 
     this.registerEventListeners();
   }
 
-  public setSize(map_size = DEFAULT_SIZE) {
-    this.canvas.width = map_size * CANVAS_SCALE;
-    this.canvas.height = map_size * CANVAS_SCALE;
+  public setSize(width = DEFAULT_SIZE, height = undefined) {
+    if(height === undefined) height = width;
+
+    this.canvas.width = width * CANVAS_SCALE;
+    this.canvas.height = height * CANVAS_SCALE;
+    this.ctx = this.canvas.getContext('2d');
+    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
   }
 
   private registerEventListeners() {

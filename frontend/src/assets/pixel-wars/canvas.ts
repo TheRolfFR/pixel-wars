@@ -35,6 +35,7 @@ export async function initialLoad(canvasController: CanvasElementController) {
     ColorPaletteLocal = palette;
   });
 
+  canvasController.setSize(canvasSize.width, canvasSize.height);
   const imageData = canvasStringToColorList(bytes, canvasSize);
   canvasController.putCanvasPixels(imageData);
 }
