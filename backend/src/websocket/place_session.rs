@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, time::Instant};
 
 use actix_web_actors::ws;
 use actix::prelude::*;
@@ -13,6 +13,7 @@ pub struct PlaceSession {
     /// Place server
     pub place_server: Addr<PlaceServer>,
     pub close_reason: Option<ws::CloseReason>,
+    pub start: Instant,
 }
 
 impl Actor for PlaceSession {
@@ -47,10 +48,10 @@ impl Actor for PlaceSession {
     fn stopped(&mut self, _: &mut Self::Context) {
         match &self.close_reason {
             Some(reason) if reason.code != ws::CloseCode::Normal && reason.code != ws::CloseCode::Away => {
-                log::error!("User #{} disconnected with reason: {}={:?}", self.uuid, u16::from(reason.code), reason);
+                log::error!("User #{} disconnected after {:?} with reason: {}={:?}", self.uuid, self.start.elapsed(), u16::from(reason.code), reason);
             },
             None => {
-                log::error!("User #{} disconnected without reason", self.uuid);
+                log::error!("User #{} disconnected after {:?} without reason", self.uuid, self.start.elapsed());
             }
             _ => {}
         };

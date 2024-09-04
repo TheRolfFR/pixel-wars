@@ -29,5 +29,6 @@ pub async fn subscription_get(
         uuid: uuid,
         place_server: server.get_ref().clone(),
         close_reason: None,
+        start: Instant::now(),
     }, &req, stream)
 }

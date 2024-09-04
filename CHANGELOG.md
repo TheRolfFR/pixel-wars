@@ -16,7 +16,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Use actual API canvas size result
-
-### Diffs
+- Reloading websocket on undesired fail
 
 [unreleased]: https://github.com/TheRolfFR/rs-place/commits/main

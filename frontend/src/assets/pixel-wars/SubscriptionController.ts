@@ -2,15 +2,42 @@ import type CanvasElementController from './CanvasController';
 import { decodeColor, encodeColor } from './canvas';
 import { ColorPickerStore, OnlineCountStore, TimeoutStore } from './stores';
 import { get } from 'svelte/store';
+import timeFormat from './utils/timeFormat';
 
 export default class SubscriptionController {
   websocketServer: WebSocket;
+  websocketServerCreated: number;
   canvasController: CanvasElementController;
 
   constructor(canvasController: CanvasElementController) {
     this.canvasController = canvasController;
   }
 
+  public async createWsConnection() {
+    const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
+    this.websocketServer = new WebSocket(protocol + window.location.host + '/api/subscribe');
+    this.websocketServerCreated = Date.now();
+    this.websocketServer.addEventListener("message", this.receiveMessageHandler());
+    this.websocketServer.addEventListener("error", (event) => {
+      console.error("WebSocket error: ", event);
+    })
+    this.websocketServer.addEventListener("close", (event) => {
+      const code = event.code;
+      const duration = timeFormat(Math.round((Date.now() - this.websocketServerCreated) / 1000));
+      if(code === 1000) {
+        console.info(`WebSocket closed after ${duration} with error code ${code}: Normal Closure`)
+      }
+      if(code === 1001) {
+        console.info(`WebSocket closed after ${duration} with error code ${code}: Going away`)
+      } else {
+        console.error(`WebSocket closed after ${duration} with error code ${code}`, event);
+        console.error(`Websocket closed after ${duration} with following reason: `, event.reason);
+
+        console.log("Reopening socket...");
+        this.createWsConnection();
+      }
+    })
+  }
 
   public async initConnection() {
     const cookies = await fetch(window.location.protocol+"//"+window.location.host+'/api/getSession');
@@ -19,24 +46,7 @@ export default class SubscriptionController {
       return;
     }
     window.dispatchEvent(new CustomEvent<{ done: boolean }>("sessionLoaded", { detail: { done: true } }));
-    const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
-    this.websocketServer = new WebSocket(protocol + window.location.host + '/api/subscribe');
-    this.websocketServer.addEventListener("message", this.receiveMessageHandler());
-    this.websocketServer.addEventListener("error", (event) => {
-      console.error("WebSocket error: ", event);
-    })
-    this.websocketServer.addEventListener("close", (event) => {
-      const code = event.code;
-      if(code === 1000) {
-        console.log(`WebSocket closed with error code ${code}: Normal Closure`)
-      }
-      if(code === 1001) {
-        console.log(`WebSocket closed with error code ${code}: Going away`)
-      } else {
-        console.error(`WebSocket closed with error code ${code}`, event);
-        console.error("Websocket closed with following reason: ", event.reason);
-      }
-    })
+    await this.createWsConnection();
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };

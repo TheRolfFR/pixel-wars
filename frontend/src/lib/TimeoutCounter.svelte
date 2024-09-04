@@ -1,5 +1,6 @@
 <script lang="ts">
   import { TimeoutStore } from '../assets/pixel-wars/stores';
+  import timeFormat from '../assets/pixel-wars/utils/timeFormat';
 
   let diffTime: number = 0;
   let sessionLoaded: boolean = false;
@@ -62,19 +63,6 @@
       remainingPixels: query.remainingPixels
     });
   });
-
-  function timeFormat(secs: number): String {
-    let hours = Math.floor(secs / 3600);
-    let minutes = Math.floor((secs % 3600) / 60);
-    let seconds = secs % 60;
-    let result = ``;
-    if(hours > 0) result += `${hours}h`;
-    if(minutes > 0) result += `${minutes}m`;
-
-    result += `${seconds}s`;
-
-    return result;
-  }
 
   $: show_counter = $TimeoutStore.remainingPixels == 0 && secondsLeft > 0;
 </script>
