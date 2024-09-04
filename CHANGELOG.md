@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Svelte hot reload fix comeback but only for dev
 - CHANGELOG.md to track status
 - README badges for repo size + changelog link
 
