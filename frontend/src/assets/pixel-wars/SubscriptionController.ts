@@ -6,22 +6,32 @@ import timeFormat from './utils/timeFormat';
 
 export default class SubscriptionController {
   websocketServer: WebSocket;
+  websocketHeartbeatInterval: number | undefined;
   websocketServerCreated: number;
   canvasController: CanvasElementController;
 
   constructor(canvasController: CanvasElementController) {
     this.canvasController = canvasController;
+    this.websocketHeartbeatInterval = undefined;
   }
 
   public async createWsConnection() {
     const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
     this.websocketServer = new WebSocket(protocol + window.location.host + '/api/subscribe');
     this.websocketServerCreated = Date.now();
+
+    this.websocketHeartbeatInterval = setInterval(() => {
+      this.websocketServer.send("h"); // heartbeat
+    }, 30*1000); // every 30s
+
     this.websocketServer.addEventListener("message", this.receiveMessageHandler());
+
     this.websocketServer.addEventListener("error", (event) => {
       console.error("WebSocket error: ", event);
     })
     this.websocketServer.addEventListener("close", (event) => {
+      clearInterval(this.websocketHeartbeatInterval);
+
       const code = event.code;
       const duration = timeFormat(Math.round((Date.now() - this.websocketServerCreated) / 1000));
       if(code === 1000) {
@@ -104,6 +114,14 @@ export default class SubscriptionController {
         {
           const count = Number.parseInt(args[0], 10);
           OnlineCountStore.set(count)
+        } else if(command == 'h')
+        {
+          // heartbeat received, normal
+        }
+        else
+        {
+          // returned unknown content or error
+          console.error(message.data);
         }
         return;
       }

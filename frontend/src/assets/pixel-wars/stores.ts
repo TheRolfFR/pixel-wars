@@ -36,6 +36,9 @@ export const TimeoutStore = {
                         this.request();
                     }, restart_duration + 10);
                 }
+                else {
+                    this.request();
+                }
 
                 return obj;
             })
