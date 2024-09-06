@@ -11,25 +11,29 @@
 </script>
 <div id="color-picker-placement">
     <div id="color-picker" class="card">
-        <div id="color-picker-part">
-            <div id="palette-grid-scroller">
-                <div id="palette-grid">
-                    {#each $CanvasPaletteStore as color, i}
-                        <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
-                            on:click="{changeColor(i)}"
-                            class:color-block-active="{i === $ColorPickerStore}">
-                        </button>
-                    {/each}
-                </div>
+        {#if $CanvasPaletteStore.length > 0}
+            <div id="color-picker-part">
+                    <div id="palette-grid-scroller">
+                        <div id="palette-grid">
+                            {#each $CanvasPaletteStore as color, i}
+                                <button class="color-block" class:white={color[0] == 255 && color[1] == 255 && color[2] == 255} style="background-color: rgb({color[0]},{color[1]},{color[2]});"
+                                    on:click="{changeColor(i)}"
+                                    class:color-block-active="{i === $ColorPickerStore}">
+                                </button>
+                            {/each}
+                        </div>
+                    </div>
+                    {#if $TimeoutStore.remainingPixels !== null}
+                        <div class="pixels-left desktop">
+                            <b>{ $TimeoutStore.remainingPixels }</b>
+                        </div>
+                        <div class="pixels-left mobile">
+                            { $TimeoutStore.remainingPixels } pixels left
+                        </div>
+                    {/if}
+                <TimeoutCounter />
             </div>
-            <div class="pixels-left desktop">
-                <b>{ $TimeoutStore.remainingPixels }</b>
-            </div>
-            <div class="pixels-left mobile">
-                { $TimeoutStore.remainingPixels } pixels left
-            </div>
-            <TimeoutCounter />
-        </div>
+        {/if}
         <div id="promo">
             You can star ⭐ this project on <a href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer">GitHub</a>
         </div>
@@ -60,11 +64,12 @@
         align-items: center;
         max-width: 100%;
         gap: $gap_size*2;
-        padding: 0.7rem 0.7rem 0.4rem;
+        padding: 0.7rem 0.7rem 0;
+        position: relative;
     }
 
     #promo {
-        margin-bottom: 0.4rem;
+        padding: 0.4rem 0.7rem;
     }
 
     #palette-grid {

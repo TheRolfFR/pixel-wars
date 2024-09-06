@@ -3,76 +3,37 @@
   import timeFormat from '../assets/pixel-wars/utils/timeFormat';
 
   let diffTime: number = 0;
-  let sessionLoaded: boolean = false;
 
   TimeoutStore.subscribe(async (timeout) => {
-    if (!sessionLoaded) return;
+    if(timeout.remainingPixels === null) return;
+    if(timeout.remainingPixels > 0) return;
 
-    console.log(timeout);
-    if (timeout.remainingPixels == 0) {
-      let query = await fetchLastTimeout();
-      let nextDate = new Date((query.timeout + 60) * 1000);
-      if (query.remainingPixels != 0) {
-        TimeoutStore.set({
-          timeout: new Date(query.timeout * 1000),
-          remainingPixels: query.remainingPixels
-        });
-        return;
-      }
-      let timeoutHandle = setInterval(()=>{
-        diffTime = (nextDate.getTime() - new Date().getTime())
-      }, 1000)
-      await new Promise((r) => setTimeout(r, nextDate.getTime() - new Date().getTime()));
-      query = await fetchLastTimeout();
-      while (query.remainingPixels == 0) {
-        await new Promise((r) => setTimeout(r, 1000));
-        query = await fetchLastTimeout();
-      }
-      clearTimeout(timeoutHandle);
-      TimeoutStore.set({
-        timeout: new Date(query.timeout * 1000),
-        remainingPixels: query.remainingPixels
-      });
+    const timerDuration = timeout.nextDate.getTime() - new Date().getTime();
+    if(timerDuration > 0) {
+      // keep this line to show on first second
+      diffTime = (timeout.nextDate.getTime() - new Date().getTime());
+
+      // then start the timer
+      let timeoutHandle = setInterval(() => {
+        diffTime = Math.max((timeout.nextDate.getTime() - new Date().getTime()), 0);
+      }, 1000);
+      setTimeout(() => {
+        clearInterval(timeoutHandle);
+      }, diffTime + 1000);
     }
   });
 
   $: secondsLeft = Math.round(diffTime / 1000);
-
-  async function fetchLastTimeout(): Promise<{ timeout: number; remainingPixels: number }> {
-    sessionLoaded = true;
-
-    const query = await fetch(window.location.protocol+"//"+window.location.host+'/api/client/details');
-    if (query.status != 200) {
-      return {timeout: -1, remainingPixels: -1};
-    }
-    const json = await query.json();
-    return { timeout: json.lastTimestamp, remainingPixels: json.remainingPixels };
-  }
-
-  window.addEventListener('sessionLoaded', async (ev) => {
-    const query = await fetchLastTimeout();
-    if(query.remainingPixels == -1){
-      TimeoutStore.set({
-        timeout: new Date(0),
-        remainingPixels: 9
-      });
-      return;
-    }
-    TimeoutStore.set({
-      timeout: new Date(query.timeout * 1000),
-      remainingPixels: query.remainingPixels
-    });
-  });
-
-  $: show_counter = $TimeoutStore.remainingPixels == 0 && secondsLeft > 0;
+  $: showTimeout = $TimeoutStore.remainingPixels === 0;
+  $: message = secondsLeft === 0 ? `More pixels soon...` : `More pixels in ${timeFormat(secondsLeft)}`;
 </script>
 
-<div id="timeout-message" class:active={show_counter}>
+<div id="timeout-message" class:active={showTimeout}>
   <p>You changed too many pixels!</p>
-  <p>More pixels in {timeFormat(secondsLeft)}</p>
+  <p>{message}</p>
 </div>
 
-<style>
+<style lang="scss">
   #timeout-message {
     display: none;
     position: absolute;
@@ -83,9 +44,15 @@
     border-radius: 0.6rem;
     background-color: rgba(255,255,255,0.6);
     font-weight: 600;
+    flex-direction: column;
+    justify-content: space-evenly;
+
+    p {
+      margin: 0;
+    }
   }
 
   .active {
-    display: block !important;
+    display: flex !important;
   }
 </style>

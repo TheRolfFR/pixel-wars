@@ -7,7 +7,8 @@
     "canvasHeight":256,
     "canvasChunkSize": 256,
 
-    "pixelsPerMinute": 9,
+    "basePixelAmount": 9,
+    "timeout": 30,
     "pixelsPerBytes": 2,
 
     "colors": [

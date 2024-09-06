@@ -86,18 +86,3 @@ canvas {
     display: none;
   }
 }
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: var(--rust);
-    /* background-color: var(--vanilla); */
-  }
-
-  a {
-    color: var(--dark-cyan);
-  }
-  
-  a:hover {
-    color: var(--midnight-green);
-  }
-}

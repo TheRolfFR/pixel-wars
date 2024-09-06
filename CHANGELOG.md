@@ -12,10 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Svelte hot reload fix comeback but only for dev
 - CHANGELOG.md to track status
 - README badges for repo size + changelog link
+- Custom pixel base amount
+- Custom timeout duration in seconds
+- README instructions for config.json
+
+### Changed
+
+- Auto-refresh to base amount on frontend
+- Colorful project banner
 
 ### Fixed
 
 - Use actual API canvas size result
 - Reloading websocket on undesired fail
+- Timeout message does not overlap github message
+- Logo text ace were offsetted
 
 [unreleased]: https://github.com/TheRolfFR/rs-place/commits/main

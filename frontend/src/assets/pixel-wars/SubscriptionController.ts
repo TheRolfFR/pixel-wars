@@ -46,6 +46,8 @@ export default class SubscriptionController {
       return;
     }
     window.dispatchEvent(new CustomEvent<{ done: boolean }>("sessionLoaded", { detail: { done: true } }));
+    TimeoutStore.request();
+
     await this.createWsConnection();
 
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
@@ -57,7 +59,7 @@ export default class SubscriptionController {
       if(encodeColor(this.canvasController.getPixelCanvas(x, y)) === color) return;
 
       const timeout = get(TimeoutStore);
-      if (timeout.remainingPixels == 0) return 0;
+      if (timeout.remainingPixels === 0) return 0;
       timeout.remainingPixels--;
       TimeoutStore.set(timeout);
       await this.sendUpdate(coords.x, coords.y, color);

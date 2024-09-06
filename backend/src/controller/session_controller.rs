@@ -47,7 +47,7 @@ pub async fn session_get(
     let client = model::Client {
         profile: None,
         last_timestamp: in_seconds,
-        remaining_pixels: config.pixels_per_minute
+        remaining_pixels: config.base_pixel_amount
     };
     // send client to redis
     let client_string: String = client.encode_json().map_err(BackendError::from)?;

@@ -1,13 +1,14 @@
 use actix::prelude::Message;
 use actix_web::{HttpResponse, ResponseError, http::StatusCode};
 use redis::RedisError;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json;
 use std::fs::File;
 use std::error::Error;
 use std::io::BufReader;
 use std::path::Path;
 use std::sync::Mutex;
+use std::time::Duration;
 
 
 const CANVAS_SIZE_DEFAULT: u16 = 256;
@@ -30,12 +31,22 @@ pub struct Config {
     #[serde(default = "canvas_size_default")]
     pub canvas_chunk_size: u16,
 
-    pub pixels_per_minute: usize,
+    pub base_pixel_amount: usize,
+    #[serde(deserialize_with = "deserialize_duration_seconds")]
+    pub timeout: Duration,
     #[serde(default = "pixels_per_bytes_default")]
     pub pixels_per_bytes: usize,
 
     pub colors: Vec<[u8; 3]>,
     pub colors_active: Option<Vec<usize>>,
+}
+
+fn deserialize_duration_seconds<'de, D>(deserializer: D) -> Result<Duration, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let seconds = u64::deserialize(deserializer)?;
+    Ok(Duration::from_secs(seconds))
 }
 
 pub type ChunkLocation = ((usize, usize), (usize, usize));

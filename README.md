@@ -20,6 +20,19 @@ These are not the required versions but what I used, your versions could be more
 - [pnpm](https://pnpm.io/) 9.9.0+
 - [redis](https://redis.io/) 7.4.0+
 
+## Customize your place server with config.json
+
+To configure [config.json](./config.json), you have to configured as wished:
+
+- ``redisUrl`` to your redis server URL you just launched. Value can be found or your machine or WSL ip address.
+- ``host`` for the server IP exposed. Choose your local IP address for your house or keep localhost for your computer
+- ``basePixelAmount`` and ``timeout`` in seconds define the number of pixels you can place per duration
+- ``colors`` defines the list of color codes displayed and ``colorsActive`` the index and order of active colors
+- ``canvasWidth``, ``canvasHeight`` and ``canvasChunkSize`` define how big your place is
+- ``debugMode`` is only used to set the port while developing and set-up a reverse proxy for the frontend
+
+You can take as default [config.json](./config.json) for dev and [config_prod.json](./config_prod.json) for production.
+
 ## How to develop
 
 To develop you will need to run frontend, backend, a redis server and configure [config.json](./config.json).
@@ -59,13 +72,6 @@ To watch the redis db, you can install and use [redis-commander](https://www.npm
 ```sh
 pnpm i -g redis-commander
 ```
-
-### Configure config.json
-
-To configure [config.json](./config.json), you have to configured as wished:
-
-- ``redisUrl`` to your redis server URL you just launched. Value can be found or your machine or WSL ip address.
-- ``host`` for the server IP exposed. Choose your local IP address for your house or keep localhost for your computer.
 
 ### Started URLs
 

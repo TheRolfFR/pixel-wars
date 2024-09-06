@@ -125,8 +125,8 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
 
 
         // update client
-        if duration > Duration::from_secs(60) {
-            client.remaining_pixels = config.pixels_per_minute;
+        if client.remaining_pixels == 0 && duration > config.timeout {
+            client.remaining_pixels = config.base_pixel_amount;
             client.last_timestamp = current_timestamp.as_secs_f64();
         }
         if client.remaining_pixels == 0 {
