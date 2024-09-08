@@ -5,6 +5,7 @@ use uuid::Uuid;
 
 use crate::model::{self, BackendError, Client, SESSION_COOKIE_NAME};
 
+#[get("/session")]
 pub async fn session_get(
     req: HttpRequest,
     redis: web::Data<redis::Client>,

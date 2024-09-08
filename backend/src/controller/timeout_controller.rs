@@ -18,6 +18,7 @@ struct ClientTimeoutResponse {
     remaining_pixels: usize
 }
 
+#[get("/client/timeout")]
 pub async fn client_timeout(
     req: HttpRequest,
     redis: web::Data<redis::Client>,

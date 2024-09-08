@@ -1,14 +1,15 @@
 use std::time::{Instant, Duration, SystemTime, UNIX_EPOCH};
 
 use actix::{Actor, Addr, StreamHandler};
-use actix_web::{error, http::{Error, StatusCode}, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError};
+use actix_web::{error, http::{Error, StatusCode}, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError, get};
 use actix_web_actors::ws::{self, WebsocketContext};
 use redis::{aio::MultiplexedConnection, AsyncCommands};
 use bytes::Bytes;
 
 use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, websocket::{PlaceServer, PlaceSession}};
 
-pub async fn subscription_get(
+#[get("/websocket")]
+pub async fn websocket_start(
     req: HttpRequest,
     redis: web::Data<redis::Client>,
     stream: web::Payload,

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Auto-refresh to base amount on frontend
 - Colorful project banner
 - Refined timeout to second
+- Renamed backend files to identify endpoints more easily
 
 ### Removed
 

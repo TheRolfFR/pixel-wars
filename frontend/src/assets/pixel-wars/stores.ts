@@ -16,7 +16,7 @@ export const TimeoutStore = {
         // update request status
         rawTimeoutStore.update((v) => ({...v, requestingPixels: true }));
 
-        return fetch(window.location.protocol+"//"+window.location.host+'/api/client/details')
+        return fetch(window.location.protocol+"//"+window.location.host+'/api/client/timeout')
             .then(r => r.json())
             .then(json => {
                 const obj = {

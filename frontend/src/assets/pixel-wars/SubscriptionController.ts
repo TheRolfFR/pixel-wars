@@ -17,7 +17,7 @@ export default class SubscriptionController {
 
   public async createWsConnection() {
     const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
-    this.websocketServer = new WebSocket(protocol + window.location.host + '/api/subscribe');
+    this.websocketServer = new WebSocket(protocol + window.location.host + '/websocket');
     this.websocketServerCreated = Date.now();
 
     this.websocketHeartbeatInterval = setInterval(() => {
@@ -50,7 +50,7 @@ export default class SubscriptionController {
   }
 
   public async initConnection() {
-    const cookies = await fetch(window.location.protocol+"//"+window.location.host+'/api/getSession');
+    const cookies = await fetch(window.location.protocol+"//"+window.location.host+'/api/session');
     if (!(cookies.status == 401 || cookies.status == 200)) {
       //TODO: show that something went wrong while trying to use session
       return;

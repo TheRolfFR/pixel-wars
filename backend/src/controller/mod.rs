@@ -6,8 +6,8 @@ pub use canvas_controller::*;
 mod session_controller;
 pub use session_controller::*;
 
-mod profile_controller;
-pub use profile_controller::*;
+mod timeout_controller;
+pub use timeout_controller::*;
 
-mod subscription_controller;
-pub use subscription_controller::*;
+mod websocket_controller;
+pub use websocket_controller::*;

@@ -142,6 +142,7 @@ pub fn canvas_redis_set(
         .map_err(|e| e.to_string())
 }
 
+#[get("/canvas")]
 pub async fn canvas_get(
     redis: web::Data<redis::Client>,
     config: web::Data<model::Config>
@@ -172,26 +173,5 @@ pub async fn canvas_get(
             height: config.canvas_height
         },
         colors: active_colors
-    }))
-}
-
-#[derive(Debug, Serialize)]
-struct CanvasUpdateResponse {
-    offset: u32,
-    color: u8
-}
-
-pub async fn canvas_update(
-    app_state: web::Data<model::BackendAppState>,
-    path: web::Path<(u32, u8)>
-) -> actix_web::Result<impl Responder> {
-    let mut canvas = app_state.canvas_valid.lock().unwrap();
-    let (offset, color) = path.into_inner();
-
-    (*canvas).valid = false;
-
-    Ok(HttpResponse::Ok().json(CanvasUpdateResponse {
-        offset,
-        color
     }))
 }
