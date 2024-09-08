@@ -18,8 +18,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Adjusted second to refill
 - Auto-refresh to base amount on frontend
 - Colorful project banner
+- Refined timeout to second
+
+### Removed
+
+- Removed profile data, endpoints and scripts
 
 ### Fixed
 
@@ -28,4 +34,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Timeout message does not overlap github message
 - Logo text ace were offsetted
 
-[unreleased]: https://github.com/TheRolfFR/rs-place/commits/main
+[unreleased]: https://github.com/TheRolfFR/rs-place/compare/v1.0.0...HEAD

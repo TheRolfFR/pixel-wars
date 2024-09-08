@@ -1,4 +1,4 @@
-use std::{collections::HashMap, time::{Duration, SystemTime, UNIX_EPOCH}};
+use std::collections::HashMap;
 
 use actix::prelude::*;
 use redis::{self, Commands};
@@ -114,25 +114,28 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
 
 
         // get client
-        let client_string: String = con.get(uuid.clone())
-            .map_err(|e| e.to_string())?;
-        let mut client: model::Client = serde_json::from_str(&client_string)
-            .map_err(|e| e.to_string())?;
-        let start = SystemTime::now();
-        let current_timestamp = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-        let last_timestamp = Duration::from_secs_f64(client.last_timestamp);
-        let duration = current_timestamp - last_timestamp;
+        let redis_result = con.get::<String, String>(uuid.clone());
+        let mut client = model::Client::from_redis(redis_result, config.base_pixel_amount);
 
+        let current_timestamp = model::Client::timestamp_now();
+        let duration_secs = current_timestamp - client.last_timestamp;
+        let timeout_secs = config.timeout.as_secs();
 
         // update client
-        if client.remaining_pixels == 0 && duration > config.timeout {
+        // agree with 1s margin
+        if client.remaining_pixels == 0 && duration_secs >= timeout_secs - 1 {
             client.remaining_pixels = config.base_pixel_amount;
-            client.last_timestamp = current_timestamp.as_secs_f64();
+            client.last_timestamp = current_timestamp;
         }
+
+        // reduce pixel number
         if client.remaining_pixels == 0 {
             return Err("No pixels left".to_string());
+        } else {
+            client.remaining_pixels -= 1;
         }
-        client.remaining_pixels -= 1;
+
+        // save client
         let client_string = client.encode_json()
             .map_err(|e| e.to_string())?;
         con.set(uuid, client_string)

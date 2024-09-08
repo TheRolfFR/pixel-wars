@@ -5,15 +5,16 @@ use redis::AsyncCommands;
 use redis::RedisResult;
 use serde::Serialize;
 
-use crate::model::{self, BackendError};
+use crate::model::{self, BackendError, Client};
 
 const COOKIE_NAME: &str = "sessionUUID";
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct ClientTimeoutResponse {
-    last_timestamp: usize,
-    next_timestamp: usize,
+    last_timestamp: u64,
+    next_timestamp: u64,
+    timeout: u64,
     remaining_pixels: usize
 }
 
@@ -28,21 +29,17 @@ pub async fn client_timeout(
     let mut con  = redis.get_multiplexed_async_connection().await
         .map_err(BackendError::from)?;
 
-    let client_string: String = con.get(uuid.to_string()).await
-        .map_err(BackendError::from)?;
+    let redis_result = con.get::<String, String>(uuid.to_string()).await;
+    let mut client = Client::from_redis(redis_result, config.base_pixel_amount);
 
-    let mut client: model::Client = serde_json::from_str(&client_string)
-        .map_err(BackendError::from)?;
+    let current_timestamp = model::Client::timestamp_now();
+    let duration_secs = current_timestamp - client.last_timestamp;
+    let timeout_secs = config.timeout.as_secs();
 
 
-    let start = SystemTime::now();
-    let current_timestamp = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    let last_timestamp = Duration::seconds_f64(client.last_timestamp);
-    let duration = current_timestamp - last_timestamp;
-
-    if duration.abs() > config.timeout {
+    if timeout_secs > 0 && duration_secs >= timeout_secs - 1 {
         client.remaining_pixels = config.base_pixel_amount;
-        client.last_timestamp = current_timestamp.as_secs_f64();
+        client.last_timestamp = current_timestamp;
 
         let client_string = client.encode_json()
             .map_err(BackendError::from)?;
@@ -51,65 +48,10 @@ pub async fn client_timeout(
             .map_err(BackendError::from)?;
     }
 
-    let next_timestamp = client.last_timestamp + config.timeout.as_secs_f64();
     Ok(HttpResponse::Ok().json(ClientTimeoutResponse {
-        last_timestamp: client.last_timestamp.ceil() as usize,
+        last_timestamp: client.last_timestamp,
         remaining_pixels: client.remaining_pixels,
-        next_timestamp: next_timestamp.ceil() as usize,
+        timeout: timeout_secs,
+        next_timestamp: client.last_timestamp + timeout_secs,
     }))
-}
-
-pub async fn profiles_add(
-    req: HttpRequest,
-    redis: web::Data<redis::Client>,
-    profile: web::Json<model::Profile>
-) -> actix_web::Result<impl Responder> {
-    let uuid = req.cookie(COOKIE_NAME)
-        .ok_or(error::ErrorBadRequest("No cookie provided"))?
-        .value().to_string();
-
-    let mut con  = redis.get_multiplexed_async_connection().await
-        .map_err(BackendError::from)?;
-
-    let mut client: model::Client = serde_json::from_str(&
-            con.get::<_,String>(&uuid).await
-            .map_err(BackendError::from)?
-        )
-        .map_err(BackendError::from)?;
-
-    if client.profile.is_some() {
-        return Err(error::ErrorNotAcceptable("User already has a profile"));
-    }
-
-    client.profile = Some(profile.into_inner());
-    let client_string = client.encode_json()
-        .map_err(BackendError::from)?;
-
-    con.set(&uuid, client_string).await
-        .map_err(BackendError::from)?;
-
-    Ok(HttpResponse::Ok())
-}
-
-pub async fn profiles_get(
-    req: HttpRequest,
-    redis: web::Data<redis::Client>
-) -> actix_web::Result<impl Responder> {
-    let uuid = req.cookie(COOKIE_NAME)
-        .ok_or(error::ErrorBadRequest("No cookie provided"))?
-        .value().to_string();
-
-    let mut con  = redis.get_multiplexed_async_connection().await
-        .map_err(BackendError::from)?;
-
-    let client_string: String = con.get(&uuid).await
-        .map_err(BackendError::from)?;
-
-    let client: model::Client = serde_json::from_str(&client_string)
-        .map_err(BackendError::from)?;
-
-    let profile = client.profile
-        .ok_or(error::ErrorNotFound("Client doesn't have a profile..."))?;
-
-    Ok(HttpResponse::Ok().json(profile))
 }

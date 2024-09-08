@@ -9,7 +9,6 @@
 
     "basePixelAmount": 9,
     "timeout": 30,
-    "pixelsPerBytes": 2,
 
     "colors": [
         [0, 0, 0],

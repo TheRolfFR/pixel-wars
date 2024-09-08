@@ -1,11 +1,9 @@
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
-
 use actix_web::{cookie::{self, time::Duration, CookieBuilder, SameSite}, error, get, http::header, web, HttpRequest, HttpResponse, Responder};
 use redis::AsyncCommands;
 use redis::RedisResult;
 use uuid::Uuid;
 
-use crate::model::{self, BackendError, SESSION_COOKIE_NAME};
+use crate::model::{self, BackendError, Client, SESSION_COOKIE_NAME};
 
 pub async fn session_get(
     req: HttpRequest,
@@ -41,14 +39,7 @@ pub async fn session_get(
 
 
     // create client with last seen timestamp
-    let start = SystemTime::now();
-    let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
-    let in_seconds = since_the_epoch.as_secs_f64();
-    let client = model::Client {
-        profile: None,
-        last_timestamp: in_seconds,
-        remaining_pixels: config.base_pixel_amount
-    };
+    let client = Client::new(config.base_pixel_amount);
     // send client to redis
     let client_string: String = client.encode_json().map_err(BackendError::from)?;
     log::info!("Added user UUID={} with value: {:?}", &new_uuid, &client_string);

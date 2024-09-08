@@ -19,7 +19,6 @@ export const TimeoutStore = {
         return fetch(window.location.protocol+"//"+window.location.host+'/api/client/details')
             .then(r => r.json())
             .then(json => {
-                console.log(json)
                 const obj = {
                     lastDate: new Date(json.lastTimestamp * 1000),
                     nextDate: new Date(json.nextTimestamp * 1000),
@@ -32,11 +31,13 @@ export const TimeoutStore = {
                 const restart_duration = obj.nextDate.getTime() - new Date().getTime();
                 if(restart_duration > 0)
                 {
+                    // you will ask for pixels in more than the delay
                     setTimeout(() => {
                         this.request();
                     }, restart_duration + 10);
                 }
                 else {
+                    // you should already ask for them
                     this.request();
                 }
 

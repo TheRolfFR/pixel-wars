@@ -9,6 +9,7 @@ use std::io::BufReader;
 use std::path::Path;
 use std::sync::Mutex;
 use std::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 
 const CANVAS_SIZE_DEFAULT: u16 = 256;
@@ -158,14 +159,43 @@ pub struct Profile {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Client {
-    pub profile: Option<Profile>,
-    pub last_timestamp: f64,
+    pub last_timestamp: u64,
     pub remaining_pixels: usize
 }
 
 impl Client {
+    pub fn new(base_pixel_amount: usize) -> Self {
+        let last_timestamp = Self::timestamp_now();
+        Self {
+            last_timestamp,
+            remaining_pixels: base_pixel_amount
+        }
+    }
+    pub fn timestamp_now() -> u64 {
+        let start = SystemTime::now();
+        let since_the_epoch = start.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let timestamp = since_the_epoch.as_secs();
+
+        timestamp
+    }
     pub fn encode_json(&self) -> Result<std::string::String, serde_json::Error> {
         serde_json::to_string(self)
+    }
+    pub fn decode_json<S: AsRef<str>>(str: S) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(str.as_ref())
+    }
+}
+
+impl Client {
+    pub fn from_redis<S: AsRef<str>>(result: Result<S, RedisError>, base_pixel_amount: usize) -> Self {
+        result.ok()
+            .and_then(|client_string| Self::decode_json(client_string).ok())
+            .unwrap_or(Self::new(base_pixel_amount))
+    }
+    pub fn try_from_redis<S: AsRef<str>>(result: Result<S, RedisError>) -> Result<Self, String> {
+        result
+            .map_err(|e| e.to_string())
+            .and_then(|client_string| Self::decode_json(client_string).map_err(|e| e.to_string()))
     }
 }
 
