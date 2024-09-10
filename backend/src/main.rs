@@ -1,13 +1,16 @@
 use std::path::Path;
 use std::env;
 
-use backend::{websocket, debug::add_reverse_proxy, model, routes::routes};
-use actix_cors::Cors;
-
 use redis;
-use actix::*;
-use actix_files as fs;
+
+use actix::Actor;
 use actix_web::{web, App, HttpServer};
+use actix_cors::Cors;
+use actix_files as fs;
+
+
+use backend::{websocket, debug::add_reverse_proxy, model, routes::routes};
+
 
 const DEBUG_WEB_PORT: u16 = 8080;
 const PROD_WEB_PORT: u16 = 80;

@@ -1,26 +1,35 @@
-use actix::prelude::*;
-use tokio::sync::mpsc::UnboundedSender;
+use std::time::Duration;
 
-use crate::model::PixelColorUpdateMessage;
+use actix::prelude::*;
+use actix_ws as ws;
+
+pub use crate::model::UserPixelColorMessage;
+
+use super::PlaceSession;
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct StopSession(pub Option<ws::CloseReason>);
+
+#[derive(Message)]
+#[rtype(result = "()")]
+pub struct WsMessage(pub ws::Message);
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct ConnectMessage {
-    pub author_uuid: String,
-    pub session_tx: UnboundedSender<ServerInternalMessage>,
+    pub uuid: String,
+    pub addr: Addr<PlaceSession>,
 }
 
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct DisconnectMessage {
-    pub author_uuid: String,
+    pub uuid: String,
+    pub close_reason: Option<ws::CloseReason>,
+    pub elapsed: Duration,
 }
 
 #[derive(Message, Clone)]
 #[rtype(result = "()")]
 pub struct OnlineUserCountMessage(pub usize);
-
-pub enum ServerInternalMessage {
-    Pixel(PixelColorUpdateMessage),
-    Online(usize)
-}

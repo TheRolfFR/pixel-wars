@@ -2,18 +2,19 @@ use std::collections::HashMap;
 
 use redis::{self, Commands};
 
+use actix_ws as ws;
 use actix::prelude::*;
-use tokio::sync::mpsc::UnboundedSender;
 
 use crate::{controller::canvas_redis_set, model::PixelColorUpdateMessage};
 use crate::model;
 
-use super::messages::{ConnectMessage, DisconnectMessage, OnlineUserCountMessage, ServerInternalMessage};
+use super::messages::{ConnectMessage, DisconnectMessage, OnlineUserCountMessage};
+use super::PlaceSession;
 
 pub struct PlaceServer {
     config: model::Config,
     redis_client: redis::Client,
-    sessions: HashMap<String, UnboundedSender<ServerInternalMessage>>,
+    sessions: HashMap<String, Addr<PlaceSession>>,
 }
 impl Actor for PlaceServer {
     type Context = Context<Self>;
@@ -30,7 +31,7 @@ impl PlaceServer {
     fn send_online(&self, message_count: OnlineUserCountMessage)
     {
         for session in self.sessions.values() {
-            session.send(ServerInternalMessage::Online(message_count.0)).ok();
+            session.do_send(message_count.clone());
         }
     }
 
@@ -38,7 +39,7 @@ impl PlaceServer {
     fn send_pixel_update(&self, msg: PixelColorUpdateMessage)
     {
         for session in self.sessions.values() {
-            session.send(ServerInternalMessage::Pixel(msg.clone())).ok();
+            session.do_send(msg.clone());
         }
     }
 }
@@ -47,7 +48,8 @@ impl Handler<ConnectMessage> for PlaceServer {
     type Result = ();
 
     fn handle(&mut self, msg: ConnectMessage, _: &mut Context<Self>) -> Self::Result {
-        self.sessions.insert(msg.author_uuid, msg.session_tx);
+        log::info!("Starting PlaceSession for #{}", msg.uuid.clone());
+        self.sessions.insert(msg.uuid, msg.addr);
 
         let message_count = OnlineUserCountMessage(self.sessions.len());
         self.send_online(message_count);
@@ -58,7 +60,23 @@ impl Handler<DisconnectMessage> for PlaceServer {
     type Result = ();
 
     fn handle(&mut self, msg: DisconnectMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        self.sessions.remove(&msg.author_uuid);
+        match match msg.close_reason {
+            Some(reason) => { match reason.code {
+                    ws::CloseCode::Normal | ws::CloseCode::Away => { None },
+                    _ => { Some(reason) }
+            } },
+            None => {
+                None
+            }
+        } {
+            Some(reason) => {
+                log::info!("Stopping PlaceSession for #{} after {:?} with reason {}", msg.uuid.clone(), msg.elapsed, u16::from(reason.code));
+            },
+            None => {
+                log::info!("Stopping PlaceSession for #{} after {:?} without reason", msg.uuid.clone(), msg.elapsed);
+            }
+        };
+        self.sessions.remove(&msg.uuid);
 
         let count = self.sessions.len();
         let message_count = OnlineUserCountMessage(count);

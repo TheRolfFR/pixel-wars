@@ -1,109 +1,122 @@
-use std::{io::Write, time::Instant};
+use std::time::Instant;
 
-use actix_ws::{self as ws, Session};
+use actix_ws::{self as ws, CloseReason, Session};
 
 use actix::prelude::*;
 
 use crate::model;
 
 use super::place_server::PlaceServer;
-use super::messages::ServerInternalMessage;
+use super::messages::{ConnectMessage, DisconnectMessage, OnlineUserCountMessage, UserPixelColorMessage, StopSession, WsMessage};
 
-/// Web socket place session
-#[derive(Clone)]
 pub struct PlaceSession {
-    pub uuid: String,
+    uuid: String,
     /// Place server
-    pub place_server: Addr<PlaceServer>,
-    pub close_reason: Option<ws::CloseReason>,
-    pub start: Instant,
+    place_server: Addr<PlaceServer>,
+    start: Instant,
+    session: Session,
+    close_reason: Option<ws::CloseReason>,
+}
+
+impl PlaceSession {
+    pub fn new(uuid: String, place_server: Addr<PlaceServer>, session: Session) -> Self {
+        Self {
+            uuid,
+            place_server,
+            start: Instant::now(),
+            session,
+            close_reason: None,
+        }
+    }
+
+    fn close(&mut self, msg: Option<CloseReason>, ctx: &mut Context<Self>) {
+        self.close_reason = msg;
+        ctx.stop();
+    }
 }
 
 impl Actor for PlaceSession {
     type Context = Context<Self>;
+
+    fn started(&mut self, ctx: &mut Self::Context) {
+        self.place_server.do_send(ConnectMessage {
+            uuid: self.uuid.clone(),
+            addr: ctx.address()
+        });
+    }
+
+    fn stopping(&mut self, _ctx: &mut Self::Context) -> Running {
+        self.place_server.do_send(DisconnectMessage {
+            uuid: self.uuid.clone(),
+            close_reason: self.close_reason.clone(),
+            elapsed: self.start.elapsed(),
+        });
+        Running::Stop
+    }
 }
 
-impl model::PixelColorUpdateMessage {
-    pub fn deserialize(data: &[u8]) -> Result<Self, &'static str> {
-        if data.len() < 5 {
-            return Err("Error deserializing pixel color update");
-        }
+impl Handler<OnlineUserCountMessage>  for PlaceSession {
+    type Result = ();
 
-        let pos_x = u16::from_be_bytes([data[0], data[1]]);
-        let pos_y = u16::from_be_bytes([data[2], data[3]]);
-        let color =  data[4];
-        Ok(Self {
-            pos_x,
-            pos_y,
-            color
+    fn handle(&mut self, msg: OnlineUserCountMessage, ctx: &mut Self::Context) -> Self::Result {
+        let mut session = self.session.clone();
+        async move {
+            session.text(format!("/count {}", msg.0)).await.ok();
+        }
+        .into_actor(self)
+        .wait(ctx);
+    }
+}
+
+impl Handler<model::PixelColorUpdateMessage> for PlaceSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: model::PixelColorUpdateMessage, ctx: &mut Self::Context) -> Self::Result {
+        let mut session = self.session.clone();
+        async move {
+            session.binary(msg.serialize()).await.ok();
+        }
+        .into_actor(self)
+        .wait(ctx);
+    }
+}
+
+impl Handler<WsMessage> for PlaceSession {
+    type Result = ();
+
+    fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) -> Self::Result {
+        let msg = msg.0;
+        let mut session = self.session.clone();
+        let place_server = self.place_server.clone();
+        let uuid = self.uuid.clone();
+
+        async move {
+            let close_reason = match msg {
+                ws::Message::Ping(msg) => { session.pong(&msg).await.ok(); None },
+                ws::Message::Text(text) => { session.text(text).await.ok(); None },
+                ws::Message::Binary(bin) => { place_server.send(UserPixelColorMessage::new(uuid, &bin).unwrap()).await.ok(); None },
+                ws::Message::Close(reason) => {
+                    Some(reason)
+                },
+                _ => { None },
+            };
+            close_reason
+        }
+        .into_actor(self) // converts future to ActorFuture
+        .then(|res, act, ctx| {
+            if let Some(opt_reason) = res {
+                act.close(opt_reason, ctx);
+            }
+            fut::ready(())
         })
-    }
-
-    pub fn serialize(&self) -> Vec<u8> {
-        let mut buffer = Vec::new();
-        buffer.write_all(&self.pos_x.to_be_bytes()).unwrap();
-        buffer.write_all(&self.pos_y.to_be_bytes()).unwrap();
-        buffer.write_all(&self.color.to_be_bytes()).unwrap();
-        buffer
+        .wait(ctx);
     }
 }
 
-impl PlaceSession {
-    pub fn new(uuid: String, place_server: Addr<PlaceServer>) -> Self {
-        Self {
-            uuid,
-            place_server,
-            close_reason: None,
-            start: Instant::now(),
-        }
-    }
-    pub async fn place_pixel(&self, bin: &[u8]) -> Result<(), String>
-    {
-        let user_pixel_update = model::UserPixelColorMessage {
-            pixel_update: model::PixelColorUpdateMessage::deserialize(bin).map_err(|e| e.to_string())?,
-            uuid: self.uuid.clone()
-        };
+impl Handler<StopSession> for PlaceSession {
+    type Result = ();
 
-        self.place_server.send(user_pixel_update).await.map_err(|e| e.to_string())?.ok();
-
-        Ok(())
-    }
-
-    pub async fn handle_ws(
-        &self,
-        msg: ws::Message,
-        mut session: ws::Session
-    ) -> Option<Option<ws::CloseReason>> {
-        match msg {
-            ws::Message::Ping(msg) => {
-                session.pong(&msg).await.ok();
-                None
-            },
-            ws::Message::Text(text) => {
-                session.text(text).await.ok();
-                None
-            },
-            ws::Message::Binary(bin) => {
-                if let Err(e) = self.place_pixel(&bin[..]).await {
-                    session.text(e).await.ok();
-                }
-                None
-            },
-            ws::Message::Close(reason) => {
-                Some(reason)
-            }
-            _ => None,
-        }
-    }
-
-    pub async fn handle_message(&self, int_message: ServerInternalMessage, mut session: Session) -> () {
-        match int_message {
-            ServerInternalMessage::Pixel(pixel_update) => {
-                session.binary(pixel_update.serialize()).await.ok();
-            },
-            ServerInternalMessage::Online(count) => {
-                session.text(format!("/count {count}")).await.ok();
-            }
-        };
+    fn handle(&mut self, msg: StopSession, ctx: &mut Self::Context) -> Self::Result {
+        self.close(msg.0, ctx);
     }
 }

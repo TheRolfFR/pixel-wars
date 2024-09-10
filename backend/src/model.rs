@@ -6,6 +6,7 @@ use serde_json;
 use std::fs::File;
 use std::error::Error;
 use std::io::BufReader;
+use std::io::Write;
 use std::path::Path;
 use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -205,11 +206,45 @@ pub struct PixelColorUpdateMessage {
     pub color: PixelColorUpdateMessageColor
 }
 
+impl PixelColorUpdateMessage {
+    pub fn deserialize(data: &[u8]) -> Result<Self, &'static str> {
+        if data.len() < 5 {
+            return Err("Error deserializing pixel color update");
+        }
+
+        let pos_x = u16::from_be_bytes([data[0], data[1]]);
+        let pos_y = u16::from_be_bytes([data[2], data[3]]);
+        let color =  data[4];
+        Ok(Self {
+            pos_x,
+            pos_y,
+            color
+        })
+    }
+
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+        buffer.write_all(&self.pos_x.to_be_bytes()).unwrap();
+        buffer.write_all(&self.pos_y.to_be_bytes()).unwrap();
+        buffer.write_all(&self.color.to_be_bytes()).unwrap();
+        buffer
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone, Message)]
 #[rtype(result = "Result<(), String>")]
 pub struct UserPixelColorMessage {
     pub pixel_update: PixelColorUpdateMessage,
     pub uuid: String
+}
+
+impl UserPixelColorMessage {
+    pub fn new(uuid: String, bin: &[u8]) -> Result<UserPixelColorMessage, String> {
+        Ok(UserPixelColorMessage {
+            pixel_update: PixelColorUpdateMessage::deserialize(bin).map_err(|e| e.to_string())?,
+            uuid,
+        })
+    }
 }
 
 pub const SESSION_COOKIE_NAME: &str = "sessionUUID";
