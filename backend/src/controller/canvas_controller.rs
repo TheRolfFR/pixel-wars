@@ -47,14 +47,12 @@ impl CanvasChunk {
         // bit offset because multiplied by 4 where 4 = 8 / pixels_per_byte
         let pixel_bit_width = 8 / config.pixels_per_bytes;
         let bit_offset = (chunk_pos_y * config.canvas_chunk_size as usize + chunk_pos_x) as usize * pixel_bit_width;
-        dbg!(bit_offset, &chunk_key);
 
         for i in 0..4usize {
             let is_bit_one = (pixel_color & (1 << i)) > 0;
 
             let redis_offset = bit_offset + (3-i);
 
-            dbg!(redis_offset, pixel_color & (1 << i));
             con.setbit(&chunk_key, redis_offset, is_bit_one)?;
         }
 

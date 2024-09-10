@@ -2,17 +2,16 @@ use std::time::{Instant, Duration, SystemTime, UNIX_EPOCH};
 
 use actix::{Actor, Addr, StreamHandler};
 use actix_web::{error, http::{Error, StatusCode}, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError, get};
-use actix_web_actors::ws::{self, WebsocketContext};
 use redis::{aio::MultiplexedConnection, AsyncCommands};
 use bytes::Bytes;
 
-use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, websocket::{PlaceServer, PlaceSession}};
+use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, websocket::{handler::handle_ws, PlaceServer, PlaceSession}};
 
 #[get("/websocket")]
 pub async fn websocket_start(
     req: HttpRequest,
+    body: web::Payload,
     redis: web::Data<redis::Client>,
-    stream: web::Payload,
     server: web::Data<Addr<PlaceServer>>,
 ) -> actix_web::Result<HttpResponse> {
     let uuid = req.cookie(SESSION_COOKIE_NAME)
@@ -25,11 +24,5 @@ pub async fn websocket_start(
     con.exists::<_,()>(&uuid).await
         .map_err(BackendError::from)?;
 
-    log::info!("Starting PlaceSession for #{}", uuid);
-    ws::start(PlaceSession {
-        uuid: uuid,
-        place_server: server.get_ref().clone(),
-        close_reason: None,
-        start: Instant::now(),
-    }, &req, stream)
+    handle_ws(uuid, req, body, server).await
 }

@@ -1,13 +1,16 @@
 use std::{io::Write, time::Instant};
 
-use actix_web_actors::ws;
+use actix_ws::{self as ws, Session};
+
 use actix::prelude::*;
 
 use crate::model;
 
-use super::place_server::{ConnectMessage, DisconnectMessage, OnlineUserCountMessage, PlaceServer};
+use super::place_server::PlaceServer;
+use super::messages::ServerInternalMessage;
 
 /// Web socket place session
+#[derive(Clone)]
 pub struct PlaceSession {
     pub uuid: String,
     /// Place server
@@ -17,53 +20,7 @@ pub struct PlaceSession {
 }
 
 impl Actor for PlaceSession {
-    type Context = ws::WebsocketContext<Self>;
-
-    fn started(&mut self, ctx: &mut Self::Context) {
-        log::info!("User #{} connected", self.uuid);
-        let addr = ctx.address();
-        self.place_server.send(ConnectMessage {
-            addr,
-            author_uuid: self.uuid.clone(),
-        })
-        .into_actor(self)
-        .then(|res, _, ctx| {
-            match res {
-                Ok(_) => (),
-                // something is wrong with chat server
-                _ => ctx.stop(),
-            }
-            fut::ready(())
-        })
-        .wait(ctx);
-    }
-
-    fn stopping(&mut self, _: &mut Self::Context) -> Running {
-        self.place_server.do_send(DisconnectMessage {
-            author_uuid: self.uuid.clone()
-        });
-        Running::Stop
-    }
-
-    fn stopped(&mut self, _: &mut Self::Context) {
-        match &self.close_reason {
-            Some(reason) if reason.code != ws::CloseCode::Normal && reason.code != ws::CloseCode::Away => {
-                log::error!("User #{} disconnected after {:?} with reason: {}={:?}", self.uuid, self.start.elapsed(), u16::from(reason.code), reason);
-            },
-            None => {
-                log::error!("User #{} disconnected after {:?} without reason", self.uuid, self.start.elapsed());
-            }
-            _ => {}
-        };
-    }
-}
-
-impl Handler<OnlineUserCountMessage> for PlaceSession {
-    type Result = ();
-
-    fn handle(&mut self, msg: OnlineUserCountMessage, ctx: &mut Self::Context) -> Self::Result {
-        ctx.text(format!("/count {}", msg.0));
-    }
+    type Context = Context<Self>;
 }
 
 impl model::PixelColorUpdateMessage {
@@ -91,57 +48,62 @@ impl model::PixelColorUpdateMessage {
     }
 }
 
-impl Handler<model::PixelColorUpdateMessage> for PlaceSession {
-    type Result = ();
-
-    fn handle(&mut self, msg: model::PixelColorUpdateMessage, ctx: &mut Self::Context) -> Self::Result {
-        ctx.binary(msg.serialize());
-    }
-}
-
 impl PlaceSession {
-    pub fn place_pixel(&mut self, bin: &[u8], ctx: &mut ws::WebsocketContext<PlaceSession>) -> Result<(), ()>
+    pub fn new(uuid: String, place_server: Addr<PlaceServer>) -> Self {
+        Self {
+            uuid,
+            place_server,
+            close_reason: None,
+            start: Instant::now(),
+        }
+    }
+    pub async fn place_pixel(&self, bin: &[u8]) -> Result<(), String>
     {
-        let pixel_update = model::PixelColorUpdateMessage::deserialize(bin).map_err(|_| ())?;
-
         let user_pixel_update = model::UserPixelColorMessage {
-            pixel_update,
+            pixel_update: model::PixelColorUpdateMessage::deserialize(bin).map_err(|e| e.to_string())?,
             uuid: self.uuid.clone()
         };
 
-        self.place_server.send(user_pixel_update)
-        .into_actor(self)
-        .then(|res, _, ctx| {
-            let opt_err = res
-                .map_err(|e| e.to_string())
-                .and_then(|inner| inner)
-                .err();
-
-            if let Some(err) = opt_err {
-                ctx.text(err);
-            }
-
-            fut::ready(())
-        })
-        .wait(ctx);
+        self.place_server.send(user_pixel_update).await.map_err(|e| e.to_string())?.ok();
 
         Ok(())
     }
-}
 
-impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for PlaceSession {
-    fn handle(&mut self, msg: Result<ws::Message, ws::ProtocolError>, ctx: &mut Self::Context) {
+    pub async fn handle_ws(
+        &self,
+        msg: ws::Message,
+        mut session: ws::Session
+    ) -> Option<Option<ws::CloseReason>> {
         match msg {
-            Ok(ws::Message::Ping(msg)) => ctx.pong(&msg),
-            Ok(ws::Message::Text(text)) => ctx.text(text),
-            Ok(ws::Message::Binary(bin)) => {
-                self.place_pixel(&bin[..], ctx).ok();
+            ws::Message::Ping(msg) => {
+                session.pong(&msg).await.ok();
+                None
             },
-            Ok(ws::Message::Close(reason)) => {
-                self.close_reason = reason.clone();
-                ctx.close(reason)
+            ws::Message::Text(text) => {
+                session.text(text).await.ok();
+                None
+            },
+            ws::Message::Binary(bin) => {
+                if let Err(e) = self.place_pixel(&bin[..]).await {
+                    session.text(e).await.ok();
+                }
+                None
+            },
+            ws::Message::Close(reason) => {
+                Some(reason)
             }
-            _ => (),
+            _ => None,
         }
+    }
+
+    pub async fn handle_message(&self, int_message: ServerInternalMessage, mut session: Session) -> () {
+        match int_message {
+            ServerInternalMessage::Pixel(pixel_update) => {
+                session.binary(pixel_update.serialize()).await.ok();
+            },
+            ServerInternalMessage::Online(count) => {
+                session.text(format!("/count {count}")).await.ok();
+            }
+        };
     }
 }
