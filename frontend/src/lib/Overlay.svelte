@@ -21,9 +21,9 @@
 </script>
 
 <div id="topleft">
-    <div id="logo-card" class="card">
+    <a id="logo-card" class="card" href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer">
         <img src={logoText} alt="rs/place" id="logo-text" />
-    </div>
+    </a>
 
     <div id="tips">
         <p>

@@ -1,6 +1,7 @@
 <script lang="ts">
     import { ColorPickerStore, CanvasPaletteStore } from "../assets/pixel-wars/stores";
     import { TimeoutStore } from '../assets/pixel-wars/stores';
+    import Icon from "./Icon.svelte";
     import TimeoutCounter from "./TimeoutCounter.svelte";
 
     const changeColor = num => (mouseEvent:MouseEvent) => {
@@ -35,7 +36,8 @@
             </div>
         {/if}
         <div id="promo">
-            You can star ⭐ this project on <a href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer">GitHub</a>
+            ⭐ Star this project on <a id="logo" href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer">GitHub</a>
+            <a href="https://github.com/TheRolfFR/rs-place" target="_blank" rel="noreferrer"><Icon variant="github" /></a>
         </div>
     </div>
 </div>
@@ -70,6 +72,11 @@
 
     #promo {
         padding: 0.4rem 0.7rem;
+
+        & :global(svg) {
+            height: 1rem;
+            transform: translateY(0.1rem);
+        }
     }
 
     #palette-grid {

@@ -20,7 +20,7 @@ $smoll_width: 400px;
   --tiffany-blue: #94d2bdff;
   --vanilla: white;
   --gamboge: #ee9b00ff;
-  --alloy-orange: #ca6702ff;
+  --alloy-orange: #ff4805;
   --rust: #bb3e03ff;
   --rufous: #ae2012ff;
   --auburn: #9b2226ff;
@@ -41,10 +41,10 @@ $smoll_width: 400px;
 
 a {
   font-weight: 500;
-  color: var(--alloy-orange);
+  color: var(--rust);
 }
 a:hover {
-  color: var(--gamboge);
+  color: var(--alloy-orange);
 }
 
 html, body, #app, #canvas-container {

@@ -4,8 +4,9 @@
     <img alt="GitHub repo size" src="https://img.shields.io/github/languages/code-size/therolffr/rs-place?label=Code%20size&style=flat-square&link=%22https%3A%2F%2Fgithub.com%2FTheRolfFR%2Frs-place">
     <img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/therolffr/rs-place?label=Last%20commit&style=flat-square">
     <a  href="https://github.com/TheRolfFR/rs-place/blob/main/CHANGELOG.md">
-        <img alt="Chanlog - Read here" src="https://img.shields.io/badge/Changelog-Read_here-blue?style=flat-square&link=https%3A%2F%2Fgithub.com%2FTheRolfFR%2Frs-place%2Fblob%2Fmain%2FCHANGELOG.md">
+        <img alt="Changelog - Read here" src="https://img.shields.io/badge/Changelog-Read_here-blue?style=flat-square&link=https%3A%2F%2Fgithub.com%2FTheRolfFR%2Frs-place%2Fblob%2Fmain%2FCHANGELOG.md">
     </a>
+    <a href="https://place.therolf.fr/"><img alt="Place here" src="https://img.shields.io/badge/Place-here-ff4805?style=flat-square"></a>
     <br>
     <em>A blazing fast r/place clone with Rust, Actix web, redis and Svelte</em>
 </div>
