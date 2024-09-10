@@ -108,7 +108,7 @@ impl Handler<model::UserPixelColorMessage> for PlaceServer {
         let pixel_update = msg.pixel_update;
         let config = &self.config;
 
-        if pixel_update.pos_x > config.canvas_width || pixel_update.pos_y > config.canvas_height {
+        if pixel_update.pos_x > (config.canvas_width as u16) || pixel_update.pos_y > (config.canvas_height as u16) {
             return Err("Invalid position in canvas".to_string())
         }
 

@@ -2,31 +2,19 @@ use std::{mem::size_of, vec};
 
 use actix_web::{error, get, web, HttpResponse, Responder};
 use serde::Serialize;
-use crate::model::{self, BackendError};
+use crate::model::{self, BackendError, ConfigColor};
 use redis::{AsyncCommands, Commands, RedisError};
 use base64::prelude::*;
-
-#[derive(Debug, Serialize)]
-struct CanvasInfoSize {
-    width: u16,
-    height: u16,
-}
-
-#[derive(Debug, Serialize)]
-struct CanvasInfoResponse {
-    canvas: String,
-    size: CanvasInfoSize,
-    colors: Vec<[u8; 3]>
-}
 
 pub struct CanvasChunk;
 impl CanvasChunk {
     fn chunk_index_to_key(chunk_index_x: usize, chunk_index_y: usize) -> String {
-        format!("{}_{}_{}", model::CANVAS_DB_KEY, chunk_index_x, chunk_index_y)
+        let result = format!("{}_{}_{}", model::CANVAS_DB_KEY, chunk_index_x, chunk_index_y);
+        result
     }
 
     async fn chunk_create(config: &model::Config, con: &mut impl AsyncCommands, chunk_key: &str) -> Result<Vec<u8>, RedisError> {
-        let vec_size = (config.canvas_chunk_size as usize * config.canvas_chunk_size as usize) / 2 * size_of::<u16>();
+        let vec_size = (config.canvas_chunk_size as usize * config.canvas_chunk_size as usize) / config.pixels_per_bytes;
         con.setbit(chunk_key, vec_size * 8 - 1, false).await?; // set latest chunk bit (thus *8 - 1) to create empty string with 0 value
         Ok(vec![0; vec_size])
     }
@@ -35,41 +23,13 @@ impl CanvasChunk {
         let chunk_key = Self::chunk_index_to_key(chunk_index_x, chunk_index_y);
         let opt_colors: Option<Vec<u8>> = con.get(&chunk_key).await?;
 
-        Ok(match opt_colors {
+        let mut colors = match opt_colors {
             Some(colors) => colors,
             None => Self::chunk_create(config, con, &chunk_key).await?
-        })
-    }
+        };
 
-    fn two_dim(one_dim: Vec<u8>, slice_width: usize, slice_height: usize) -> Vec<Vec<u8>> {
-        let mut result = vec![];
-        let mut iter = one_dim.iter();
-        for _ in 0..slice_height {
-            let mut row = vec![];
-            for _ in 0..slice_width {
-                row.push(*iter.next().unwrap());
-            }
-            result.push(row);
-        }
-
-        result
-    }
-
-    fn one_dim(two_dim: Vec<Vec<u8>>) -> Vec<u8> {
-        two_dim.into_iter().flatten().collect()
-    }
-
-    fn merge_two_dim_rows(mut two_dim_vec: Vec<Vec<Vec<u8>>>) -> Vec<Vec<u8>> {
-        let final_rows = two_dim_vec[0].len();
-        let mut result = vec![vec![]; final_rows];
-
-        for chunk in two_dim_vec.iter_mut() {
-            for (row_index, row) in chunk.iter_mut().enumerate() {
-                result[row_index].append(row);
-            }
-        }
-
-        result
+        colors.truncate((config.canvas_chunk_size as usize * config.canvas_chunk_size as usize) / config.pixels_per_bytes);
+        Ok(colors)
     }
 
     fn chunk_update(
@@ -87,12 +47,14 @@ impl CanvasChunk {
         // bit offset because multiplied by 4 where 4 = 8 / pixels_per_byte
         let pixel_bit_width = 8 / config.pixels_per_bytes;
         let bit_offset = (chunk_pos_y * config.canvas_chunk_size as usize + chunk_pos_x) as usize * pixel_bit_width;
+        dbg!(bit_offset, &chunk_key);
 
         for i in 0..4usize {
             let is_bit_one = (pixel_color & (1 << i)) > 0;
 
             let redis_offset = bit_offset + (3-i);
 
+            dbg!(redis_offset, pixel_color & (1 << i));
             con.setbit(&chunk_key, redis_offset, is_bit_one)?;
         }
 
@@ -103,29 +65,24 @@ impl CanvasChunk {
 async fn canvas_redis_get(
     redis: &redis::Client,
     config: &model::Config
-) -> Result<Vec<u8>, RedisError>
+) -> Result<Vec<Vec<Vec<u8>>>, RedisError>
 {
     let mut con = redis.get_multiplexed_async_connection().await?;
 
-    let mut result = vec![];
+    let chunk_numbers = config.canvas_chunks();
+    let (chunk_rows, chunk_cols) = chunk_numbers;
 
-    let (chunk_cols, chunk_rows) = config.canvas_chunks();
-    for chunk_index_y in 0..chunk_rows {
-        let mut row_chunks = vec![];
-        for chunk_index_x in 0..chunk_cols {
-            let one_dim_chunk = CanvasChunk::chunk_get(config, &mut con, chunk_index_x, chunk_index_y).await?;
+    let mut result = Vec::with_capacity(chunk_rows);
 
-            let slice_width  = config.canvas_width  as usize - chunk_index_x * config.canvas_chunk_size as usize;
-            let slice_height = config.canvas_height as usize - chunk_index_y * config.canvas_chunk_size as usize;
-
-            let two_dim_chunk = CanvasChunk::two_dim(one_dim_chunk, slice_width, slice_height);
-            row_chunks.push(two_dim_chunk);
+    for index_x in 0..chunk_rows {
+        let mut row_vec = Vec::with_capacity(chunk_cols);
+        for index_y in 0..chunk_cols {
+            row_vec.push(CanvasChunk::chunk_get(config, &mut con, index_x, index_y).await?);
         }
-
-        result.append(&mut CanvasChunk::merge_two_dim_rows(row_chunks));
+        result.push(row_vec);
     }
 
-    Ok(CanvasChunk::one_dim(result))
+    return Ok(result);
 }
 
 pub fn canvas_redis_set(
@@ -134,7 +91,7 @@ pub fn canvas_redis_set(
     pixel_update: &model::PixelColorUpdateMessage
 ) -> Result<(), String>
 {
-    let chunk_loc = config.canvas_pos_to_chunk_location(pixel_update.pos_x, pixel_update.pos_y);
+    let chunk_loc = config.canvas_pos_to_chunk_location(pixel_update.pos_x.into(), pixel_update.pos_y.into());
     let mut con = redis.get_connection()
         .map_err(|e| e.to_string())?;
 
@@ -142,17 +99,32 @@ pub fn canvas_redis_set(
         .map_err(|e| e.to_string())
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CanvasInfoSize {
+    width: usize,
+    height: usize,
+    chunk_size: usize,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CanvasInfoResponse {
+    canvas: Vec<Vec<String>>, // list of chunks
+    size: CanvasInfoSize,
+    colors: Vec<ConfigColor>,
+}
+
 #[get("/canvas")]
 pub async fn canvas_get(
     redis: web::Data<redis::Client>,
     config: web::Data<model::Config>
 ) -> actix_web::Result<impl Responder> {
-    let canvas = model::Canvas {
-        colors: canvas_redis_get(&redis, &config).await.map_err(BackendError::from)?,
-        valid: true
-    };
+    let canvas_chunks = canvas_redis_get(&redis, &config).await.map_err(BackendError::from)?;
 
-    let encoded_canvas = BASE64_STANDARD.encode(&canvas.colors);
+    let encoded_chunks = canvas_chunks.into_iter().map(|chunk_row|
+        chunk_row.into_iter().map(|chunk| BASE64_STANDARD.encode(&chunk)).collect::<Vec<_>>()
+    ).collect::<Vec<_>>();
 
     let active_colors =  if let Some(colors_active) = &config.colors_active {
         let mut filtered_ordered_colors = Vec::with_capacity(colors_active.len());
@@ -167,10 +139,11 @@ pub async fn canvas_get(
     };
 
     Ok(HttpResponse::Ok().json(CanvasInfoResponse {
-        canvas: encoded_canvas,
+        canvas: encoded_chunks,
         size: CanvasInfoSize {
             width: config.canvas_width,
-            height: config.canvas_height
+            height: config.canvas_height,
+            chunk_size: config.canvas_chunk_size,
         },
         colors: active_colors
     }))

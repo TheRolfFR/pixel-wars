@@ -1,8 +1,7 @@
-use std::sync::Mutex;
 use std::path::Path;
 use std::env;
 
-use backend::{websocket, debug::add_reverse_proxy, model::{self, Canvas}, routes::routes};
+use backend::{websocket, debug::add_reverse_proxy, model, routes::routes};
 use actix_cors::Cors;
 
 use redis;
@@ -45,11 +44,6 @@ async fn main() -> std::io::Result<()> {
     log::info!("Starting redis on {}", &redis_url);
     let redis_client = redis::Client::open(redis_url).unwrap();
 
-    // Shared mutanle application state
-    let app_state = web::Data::new(model::BackendAppState {
-        canvas_valid: Mutex::new(Canvas::new(config.canvas_width as usize, config.canvas_height as usize)),
-    });
-
     // place server
     let server = websocket::PlaceServer::new(redis_client.clone(), config.clone()).start();
 
@@ -69,7 +63,6 @@ async fn main() -> std::io::Result<()> {
 
         let mut app = App::new()
             .wrap(cors)
-            .app_data(app_state.clone())
             .app_data(web::Data::new(server.clone()))
             // .app_data(web::JsonConfig::default().limit(1024)) // <- limit size of the payload (global configuration)
             .app_data(web::Data::new(redis_client.clone())) // db connection
