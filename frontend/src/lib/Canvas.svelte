@@ -5,22 +5,23 @@
   import SubscriptionController from '../assets/pixel-wars/SubscriptionController';
 
   let isProduction = import.meta.env.MODE === 'production';
-  // @ts-ignore
+  // @ts-expect-error
   if(!isProduction && Window.prototype._addEventListener === undefined) {
-    // @ts-ignore
+    // @ts-expect-error
     Window.prototype._addEventListener = Window.prototype.addEventListener;
       Window.prototype.addEventListener = function<K extends keyof WindowEventMap>(
         event: K,
         func: (this: Window, ev: WindowEventMap[K]) => any,
         passive?: boolean | AddEventListenerOptions
       ) {
-        // @ts-ignore
+        // @ts-expect-error
         const eventdate = window.eventdate;
         if (passive==undefined) passive=false;
+        // @ts-expect-error
         this._addEventListener(event,(...args: Array<any>) => {
-          // @ts-ignore
+          // @ts-expect-error
           if(window.eventdate === eventdate) {
-            // @ts-ignore
+            // @ts-expect-error
             func(...args)
           }
         },passive);
@@ -36,7 +37,7 @@
 
   const init = (canvasElement: HTMLCanvasElement) => {
     (async () => {
-      // @ts-ignore
+      // @ts-expect-error
       window.eventdate = Date.now();
 
       canvasController = new CanvasElementController(canvasElement);

@@ -1,8 +1,18 @@
 import './app.scss'
 import App from './pages/Home.svelte'
 
-const app = new App({
-  target: document.getElementById('app'),
-})
+const target = document.getElementById('app') as Element;
 
-export default app
+if (import.meta.env.DEV && !(target instanceof HTMLElement)) {
+  throw new Error(
+    'Root element not found. Did you forget to add it to your index.html? Or maybe the id attribute got mispelled?',
+  );
+}
+
+// @ts-ignore: svelte-check found no error but ts did
+const app = new App({
+  target,
+});
+
+export default app;
+

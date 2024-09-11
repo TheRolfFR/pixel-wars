@@ -14,7 +14,7 @@ function numberClamp(num: number, min: number, max: number) {
 export class CanvasElementController {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  pixels: CanvasPixels;
+  pixels: CanvasPixels | undefined;
 
   private canvas_can_move = false;
   private canvas_can_place = false;
@@ -28,6 +28,8 @@ export class CanvasElementController {
 
   constructor(canvas: HTMLCanvasElement, map_size = DEFAULT_SIZE) {
     this.canvas = canvas;
+
+    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     this.setSize(map_size);
 
     this.updateCanvas();
@@ -35,12 +37,11 @@ export class CanvasElementController {
     this.registerEventListeners();
   }
 
-  public setSize(width = DEFAULT_SIZE, height = undefined) {
+  public setSize(width = DEFAULT_SIZE, height: number | undefined = undefined) {
     if(height === undefined) height = width;
 
     this.canvas.width = width * CANVAS_SCALE;
     this.canvas.height = height * CANVAS_SCALE;
-    this.ctx = this.canvas.getContext('2d');
     this.ctx.imageSmoothingEnabled = false;
     this.ctx.scale(CANVAS_SCALE, CANVAS_SCALE);
   }
@@ -202,6 +203,8 @@ export class CanvasElementController {
   }
 
   putPixelCanvas(x: number, y: number, color: Color) {
+    if(this.pixels === undefined) return;
+
     this.pixels.colors[x + (this.pixels.width * y)] = color;
     this.updateCanvas();
 
@@ -210,6 +213,7 @@ export class CanvasElementController {
   }
 
   getPixelCanvas(x: number, y: number): Color {
+    if(this.pixels === undefined) return [0, 0, 0, 0];
     return this.pixels.colors[x + (this.pixels.width * y)];
   }
 

@@ -1,5 +1,6 @@
 import { writable } from "svelte/store";
 import { createStore } from "./utils/createStore";
+import type { Color } from "./CanvasController";
 
 
 export const ColorPickerStore = createStore("COLOR_PICKER", 0, (s) => Number.parseInt(s, 10), v => v);
@@ -63,6 +64,6 @@ export const CanvasInfoStore = writable({
     width: 0,
 })
 
-export const CanvasPaletteStore = writable([])
+export const CanvasPaletteStore = writable(new Array<Color>())
 
 export const OnlineCountStore = writable(0);

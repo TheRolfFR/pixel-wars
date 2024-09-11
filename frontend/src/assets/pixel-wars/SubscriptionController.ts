@@ -5,23 +5,23 @@ import { get } from 'svelte/store';
 import timeFormat from './utils/timeFormat';
 
 export default class SubscriptionController {
-  websocketServer: WebSocket;
+  websocketServer: WebSocket | undefined;
   websocketHeartbeatInterval: number | undefined;
-  websocketServerCreated: number;
   canvasController: CanvasElementController;
 
   constructor(canvasController: CanvasElementController) {
     this.canvasController = canvasController;
     this.websocketHeartbeatInterval = undefined;
+    this.websocketServer = undefined;
   }
 
   public async createWsConnection() {
     const protocol = window.location.protocol.startsWith("https") ? "wss://" : "ws://";
     this.websocketServer = new WebSocket(protocol + window.location.host + '/websocket');
-    this.websocketServerCreated = Date.now();
+    const websocketServerCreated = Date.now();
 
     this.websocketHeartbeatInterval = setInterval(() => {
-      this.websocketServer.send("h"); // heartbeat
+      (this.websocketServer as WebSocket).send("h"); // heartbeat
     }, 30*1000); // every 30s
 
     this.websocketServer.addEventListener("message", this.receiveMessageHandler());
@@ -33,7 +33,7 @@ export default class SubscriptionController {
       clearInterval(this.websocketHeartbeatInterval);
 
       const code = event.code;
-      const duration = timeFormat(Math.round((Date.now() - this.websocketServerCreated) / 1000));
+      const duration = timeFormat(Math.round((Date.now() - websocketServerCreated) / 1000));
       if(code === 1000) {
         console.info(`WebSocket closed after ${duration} with error code ${code}: Normal Closure`)
       }
@@ -60,6 +60,7 @@ export default class SubscriptionController {
 
     await this.createWsConnection();
 
+    // @ts-expect-error
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };
 
@@ -69,7 +70,8 @@ export default class SubscriptionController {
       if(encodeColor(this.canvasController.getPixelCanvas(x, y)) === color) return;
 
       const timeout = get(TimeoutStore);
-      if (timeout.remainingPixels === 0) return 0;
+      if (timeout.remainingPixels === null) return;
+      if (timeout.remainingPixels === 0) return;
       timeout.remainingPixels--;
       TimeoutStore.set(timeout);
       await this.sendUpdate(coords.x, coords.y, color);
@@ -79,6 +81,7 @@ export default class SubscriptionController {
 
   public async sendUpdate(x: number, y: number, color: number) {
     if (color >= 16) throw new Error(`illegal color ${color} must be less than 16...`);
+    if(this.websocketServer === undefined) return;
     this.websocketServer.send(this.encodeMessage(x, y, color));
   }
 
