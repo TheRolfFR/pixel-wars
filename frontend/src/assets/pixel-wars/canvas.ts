@@ -32,7 +32,7 @@ export async function initialLoad(canvasController: CanvasElementController) {
   const canvasSize = canvasJSON['size'] as CanvasInfoSize;
 
   //* Colors
-  ColorPaletteLocal = canvasJSON['colors'].map(e => [...e, 255]);
+  ColorPaletteLocal = canvasJSON['colors'].map((e: [number, number, number]) => [...e, 255]);
   CanvasPaletteStore.set(ColorPaletteLocal);
   CanvasPaletteStore.subscribe(palette => {
     ColorPaletteLocal = palette;

@@ -9,13 +9,18 @@
   if(!isProduction && Window.prototype._addEventListener === undefined) {
     // @ts-ignore
     Window.prototype._addEventListener = Window.prototype.addEventListener;
-      Window.prototype.addEventListener = function(event, func, passive) {
+      Window.prototype.addEventListener = function<K extends keyof WindowEventMap>(
+        event: K,
+        func: (this: Window, ev: WindowEventMap[K]) => any,
+        passive?: boolean | AddEventListenerOptions
+      ) {
         // @ts-ignore
         const eventdate = window.eventdate;
         if (passive==undefined) passive=false;
-        this._addEventListener(event,(...args) => {
+        this._addEventListener(event,(...args: Array<any>) => {
           // @ts-ignore
           if(window.eventdate === eventdate) {
+            // @ts-ignore
             func(...args)
           }
         },passive);

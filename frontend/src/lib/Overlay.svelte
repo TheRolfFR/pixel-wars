@@ -3,7 +3,7 @@
     import { OnlineCountStore, CanvasInfoStore } from "../assets/pixel-wars/stores";
     import Icon from './Icon.svelte';
 
-    const formatCount = n => {
+    const formatCount = (n: number) => {
         if (n < 1e3) return n;
         if (n >= 1e3 && n < 1e6) return +(n / 1e3).toFixed(1) + "K";
         if (n >= 1e6 && n < 1e9) return +(n / 1e6).toFixed(1) + "M";
@@ -83,10 +83,10 @@
             justify-items: center;
             gap: 0.5rem;
             margin: 0;
+        }
 
-            &:global(> *:first-child) {
-                width: 1rem;
-            }
+        :global(p > *:first-child) {
+            width: 1rem;
         }
     }
 

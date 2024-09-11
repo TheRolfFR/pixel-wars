@@ -4,7 +4,7 @@
     import Icon from "./Icon.svelte";
     import TimeoutCounter from "./TimeoutCounter.svelte";
 
-    const changeColor = num => (mouseEvent:MouseEvent) => {
+    const changeColor = (num: number) => (mouseEvent:MouseEvent) => {
         const element = mouseEvent.target as Element;
         element.classList.add("color-block-active");
         ColorPickerStore.set(num);

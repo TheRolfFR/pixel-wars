@@ -7,7 +7,7 @@ const DEFAULT_SIZE = 252;
 const LEFT_BUTTON = 0;
 const MIDDLE_BUTTON = 1;
 
-function numberClamp(num, min, max) {
+function numberClamp(num: number, min: number, max: number) {
   return Math.min(Math.max(num, min), max)
 }
 
