@@ -9,7 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 
 
-use backend::{websocket, debug::add_reverse_proxy, model, routes::routes};
+use backend::{actors, debug::add_reverse_proxy, model, routes::routes};
 
 
 const DEBUG_WEB_PORT: u16 = 8080;
@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
     let redis_client = redis::Client::open(redis_url).unwrap();
 
     // place server
-    let server = websocket::PlaceServer::new(redis_client.clone(), config.clone()).start();
+    let server = actors::PlaceServer::new(redis_client.clone(), config.clone()).start();
 
     // http server config
     let (ip, port) = if config.debug_mode {

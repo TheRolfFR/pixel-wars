@@ -1,11 +1,12 @@
 use std::time::{Instant, Duration, SystemTime, UNIX_EPOCH};
 
+use tokio::task::spawn_local;
 use actix::{Actor, Addr, StreamHandler};
 use actix_web::{error, http::{Error, StatusCode}, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError, get};
 use redis::{aio::MultiplexedConnection, AsyncCommands};
 use bytes::Bytes;
 
-use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, websocket::{handler::handle_ws, PlaceServer, PlaceSession}};
+use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, actors::{handler::handle_ws, PlaceServer, PlaceSession}};
 
 #[get("/websocket")]
 pub async fn websocket_start(
@@ -24,5 +25,11 @@ pub async fn websocket_start(
     con.exists::<_,()>(&uuid).await
         .map_err(BackendError::from)?;
 
-    handle_ws(uuid, req, body, server).await
+    let (response, session, msg_stream) = actix_ws::handle(&req, body)?;
+
+    spawn_local(async move {
+        handle_ws(uuid, session, server.get_ref().clone(), msg_stream).await;
+    });
+
+    Ok(response)
 }

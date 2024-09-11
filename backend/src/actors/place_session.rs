@@ -30,7 +30,13 @@ impl PlaceSession {
     }
 
     fn close(&mut self, msg: Option<CloseReason>, ctx: &mut Context<Self>) {
-        self.close_reason = msg;
+        self.close_reason = msg.clone();
+        let session = self.session.clone();
+        async move {
+            session.close(msg).await.ok();
+        }
+        .into_actor(self)
+        .wait(ctx);
         ctx.stop();
     }
 }
@@ -55,7 +61,7 @@ impl Actor for PlaceSession {
     }
 }
 
-impl Handler<OnlineUserCountMessage>  for PlaceSession {
+impl Handler<OnlineUserCountMessage> for PlaceSession {
     type Result = ();
 
     fn handle(&mut self, msg: OnlineUserCountMessage, ctx: &mut Self::Context) -> Self::Result {
@@ -85,7 +91,7 @@ impl Handler<WsMessage> for PlaceSession {
     type Result = ();
 
     fn handle(&mut self, msg: WsMessage, ctx: &mut Self::Context) -> Self::Result {
-        let msg = msg.0;
+        let msg: ws::Message = msg.0;
         let mut session = self.session.clone();
         let place_server = self.place_server.clone();
         let uuid = self.uuid.clone();
