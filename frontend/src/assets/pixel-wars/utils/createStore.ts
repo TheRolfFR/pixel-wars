@@ -33,6 +33,7 @@ export function createStore<T, V>(
 	if (typeof initial == "object" && !Array.isArray(initial)) {
 		Object.keys(default_value as object).forEach((key) => {
 			if (!(key in (initial as object)))
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				(initial as Record<string, any>)[key] = (default_value as Record<string, any>)[key];
 		});
 	}

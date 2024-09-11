@@ -9,7 +9,8 @@ if (import.meta.env.DEV && !(target instanceof HTMLElement)) {
   );
 }
 
-// @ts-ignore: svelte-check found no error but ts did
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore svelte-check found no error but ts did
 const app = new App({
   target,
 });

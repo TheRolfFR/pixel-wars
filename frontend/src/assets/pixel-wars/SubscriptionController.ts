@@ -60,7 +60,7 @@ export default class SubscriptionController {
 
     await this.createWsConnection();
 
-    // @ts-expect-error
+    // @ts-expect-error Custom event pixelClicked
     window.addEventListener("pixelClicked", async (ev: CustomEvent) => {
       const coords = ev.detail as { x: number, y: number };
 
