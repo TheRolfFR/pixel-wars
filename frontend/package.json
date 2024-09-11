@@ -13,19 +13,19 @@
     "lint": "eslint --ext .js,.ts,.svelte ."
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^2.5.3",
-    "@tsconfig/svelte": "^3.0.0",
-    "@typescript-eslint/eslint-plugin": "^5.62.0",
-    "eslint": "^8.57.0",
-    "eslint-config-prettier": "^8.10.0",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
+    "@tsconfig/svelte": "^5.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.5.0",
+    "eslint": "9.10.0",
+    "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-svelte3": "^4.0.0",
-    "prettier-plugin-svelte": "^2.10.1",
-    "svelte": "^3.59.2",
-    "svelte-check": "^2.10.3",
+    "prettier-plugin-svelte": "^3.2.6",
+    "svelte": "4.2.19",
+    "svelte-check": "^4.0.1",
     "svelte-use-form": "^2.10.0",
     "tslib": "^2.7.0",
-    "typescript": "^4.9.5",
-    "vite": "^4.5.3"
+    "typescript": "5.6.2",
+    "vite": "5.4.4"
   },
   "dependencies": {
     "frontend": "file:",
