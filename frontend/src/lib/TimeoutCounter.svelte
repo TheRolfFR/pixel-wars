@@ -35,6 +35,7 @@
 
 <style lang="scss">
   #timeout-message {
+    padding: 0.7rem 0.7rem 0;
     display: none;
     position: absolute;
     top: 0;
