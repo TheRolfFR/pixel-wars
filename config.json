@@ -1,7 +1,7 @@
 {
     "redisUrl": "redis://172.18.115.69/",
     "host": "localhost",
-    "debugMode": true,
+    "port": 8080,
 
     "canvasWidth": 256,
     "canvasHeight": 256,

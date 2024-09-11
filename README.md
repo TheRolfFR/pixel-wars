@@ -26,11 +26,10 @@ These are not the required versions but what I used, your versions could be more
 To configure [config.json](./config.json), you have to configured as wished:
 
 - ``redisUrl`` to your redis server URL you just launched. Value can be found or your machine or WSL ip address.
-- ``host`` for the server IP exposed. Choose your local IP address for your house or keep localhost for your computer
+- ``host`` and ``port`` for the server IP and port exposed. Choose your LAN IP address for your house or keep localhost for your computer. Port must match your reverse proxy entry.
 - ``basePixelAmount`` and ``timeout`` in seconds define the number of pixels you can place per duration
 - ``colors`` defines the list of color codes displayed and ``colorsActive`` the index and order of active colors
 - ``canvasWidth``, ``canvasHeight`` and ``canvasChunkSize`` define how big your place is
-- ``debugMode`` is only used to set the port while developing and set-up a reverse proxy for the frontend
 
 You can take as default [config.json](./config.json) for dev and [config_prod.json](./config_prod.json) for production.
 

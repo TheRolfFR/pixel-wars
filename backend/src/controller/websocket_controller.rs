@@ -1,12 +1,9 @@
-use std::time::{Instant, Duration, SystemTime, UNIX_EPOCH};
-
 use tokio::task::spawn_local;
-use actix::{Actor, Addr, StreamHandler};
-use actix_web::{error, http::{Error, StatusCode}, web, App, HttpRequest, HttpResponse, HttpServer, Responder, ResponseError, get};
-use redis::{aio::MultiplexedConnection, AsyncCommands};
-use bytes::Bytes;
+use actix::Addr;
+use actix_web::{error, web, HttpRequest, HttpResponse, get};
+use redis::AsyncCommands;
 
-use crate::{model::{self, BackendError, SESSION_COOKIE_NAME}, actors::{handler::handle_ws, PlaceServer, PlaceSession}};
+use crate::{model::{BackendError, SESSION_COOKIE_NAME}, actors::{handler::handle_ws, PlaceServer}};
 
 #[get("/websocket")]
 pub async fn websocket_start(

@@ -1,4 +1,4 @@
-use actix_web::{cookie::{self, time::Duration, CookieBuilder, SameSite}, error, get, http::header, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{cookie::{time::Duration, CookieBuilder, SameSite}, get, http::header, web, HttpRequest, HttpResponse};
 use redis::AsyncCommands;
 use redis::RedisResult;
 use uuid::Uuid;

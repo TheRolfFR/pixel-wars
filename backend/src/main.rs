@@ -9,11 +9,7 @@ use actix_cors::Cors;
 use actix_files as fs;
 
 
-use backend::{actors, debug::add_reverse_proxy, model, routes::routes};
-
-
-const DEBUG_WEB_PORT: u16 = 8080;
-const PROD_WEB_PORT: u16 = 80;
+use backend::{actors, dev, model, routes::routes};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -39,6 +35,9 @@ async fn main() -> std::io::Result<()> {
         if let Ok(env_var) = env::var("HOST") {
             config.host = env_var;
         }
+        if let Ok(env_var) = env::var("PORT") {
+            config.port = env_var.parse().expect("Failed to extract PORT from ENV");
+        }
         config
     };
 
@@ -51,12 +50,12 @@ async fn main() -> std::io::Result<()> {
     let server = actors::PlaceServer::new(redis_client.clone(), config.clone()).start();
 
     // http server config
-    let (ip, port) = if config.debug_mode {
-        (config.host.clone(), DEBUG_WEB_PORT)
-    } else {
-        (config.host.clone(), PROD_WEB_PORT)
-    };
-    log::info!("starting HTTP server at http://{}:{}", ip, port);
+    let ip = config.host.clone();
+    let port = config.port.clone();
+    let devmode = cfg!(debug_assertions);
+    log::info!("starting HTTP server at http://{ip}:{port}");
+    if devmode {  log::info!("Adding reverse proxy for frontend..."); }
+
     HttpServer::new(move || {
         let cors = Cors::default()
             .allow_any_origin()
@@ -73,8 +72,8 @@ async fn main() -> std::io::Result<()> {
             // .wrap(actix_web::middleware::Logger::new("%a \"%r\" %s %b \"%{Referer}i\" %T")) // log things to stdout
             .configure(routes);
 
-        if config.debug_mode {
-            app = app.configure(add_reverse_proxy);
+        if devmode {
+            app = app.configure(dev::add_reverse_proxy);
         } else {
             app = app
             .service(fs::Files::new("/favicons", "../frontend/public/favicons"))

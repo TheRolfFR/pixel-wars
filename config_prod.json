@@ -1,7 +1,7 @@
 {
     "redisUrl": "redis://rsplace_redis/",
     "host": "0.0.0.0",
-    "debugMode":false,
+    "port": 80,
 
     "canvasWidth":256,
     "canvasHeight":256,

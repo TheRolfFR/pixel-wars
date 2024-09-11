@@ -1,8 +1,5 @@
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
-
-use actix_web::{cookie::{self, time::Duration, CookieBuilder, SameSite}, error::{self, InternalError}, get, web, HttpRequest, HttpResponse, Responder, ResponseError};
+use actix_web::{error, get, web, HttpRequest, HttpResponse, Responder};
 use redis::AsyncCommands;
-use redis::RedisResult;
 use serde::Serialize;
 
 use crate::model::{self, BackendError, Client};

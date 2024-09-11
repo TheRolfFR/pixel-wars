@@ -17,6 +17,12 @@ fn canvas_size_default() -> usize { CANVAS_SIZE_DEFAULT }
 const PIXELS_PER_BYTES_DEFAULT: usize = 2;
 fn pixels_per_bytes_default() -> usize { PIXELS_PER_BYTES_DEFAULT }
 
+#[cfg(debug_assertions)]
+const WEB_PORT: u16 = 8080;
+#[cfg(not(debug_assertions))]
+const WEB_PORT: u16 = 80;
+fn web_port_default() -> u16 { WEB_PORT }
+
 pub type ConfigColor = [u8; 3];
 
 #[derive(Debug, Deserialize, Clone)]
@@ -24,8 +30,8 @@ pub type ConfigColor = [u8; 3];
 pub struct Config {
     pub redis_url: String,
     pub host: String,
-    #[serde(default)]
-    pub debug_mode: bool,
+    #[serde(default = "web_port_default")]
+    pub port: u16,
 
     #[serde(default = "canvas_size_default")]
     pub canvas_width: usize,

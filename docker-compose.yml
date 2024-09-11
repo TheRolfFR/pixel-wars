@@ -21,4 +21,5 @@ services:
     environment:
       - REDIS_URL=redis://rsplace_redis/
       - HOST=0.0.0.0
+      - PORT=80
     container_name: rsplace_server

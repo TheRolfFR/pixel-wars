@@ -2,7 +2,7 @@ use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use reqwest::Client;
 
 #[allow(dead_code)]
-pub async fn proxy_handler(req: HttpRequest, body: web::Bytes) -> impl Responder {
+async fn proxy_handler(req: HttpRequest, body: web::Bytes) -> impl Responder {
     let client = Client::new();
     let target_url = "http://localhost:5173";
 
@@ -39,4 +39,10 @@ pub async fn proxy_handler(req: HttpRequest, body: web::Bytes) -> impl Responder
         }
         Err(err) => HttpResponse::InternalServerError().body(format!("Failed to forward request: {}", err)),
     }
+}
+
+pub fn add_reverse_proxy(
+    cfg: &mut web::ServiceConfig,
+) {
+    cfg.default_service(web::to(proxy_handler));
 }

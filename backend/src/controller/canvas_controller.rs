@@ -1,6 +1,6 @@
-use std::{mem::size_of, vec};
+use std::vec;
 
-use actix_web::{error, get, web, HttpResponse, Responder};
+use actix_web::{get, web, HttpResponse, Responder};
 use serde::Serialize;
 use crate::model::{self, BackendError, ConfigColor};
 use redis::{AsyncCommands, Commands, RedisError};
